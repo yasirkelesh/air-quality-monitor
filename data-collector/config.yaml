@@ -6,3 +6,8 @@ mongodb:
   uri: "mongodb://admin:password@mongodb:27017/"
   database: "pollution_db"
   collection: "raw_data"
+
+mqtt:
+  brokerurl: "mqtt://mqtt-broker:1883"
+  clientid: "data-collector"
+  topic: "pollution/#"

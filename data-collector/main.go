@@ -36,53 +36,54 @@ func main() {
 	pollutionService := service.NewPollutionService(repo)
 
 	// MQTT istemcisini başlat
-	mqttBrokerURL := os.Getenv("MQTT_BROKER_URL")
-	mqttClientID := os.Getenv("MQTT_CLIENT_ID")
-	mqttTopic := os.Getenv("MQTT_TOPIC")
-
-	if mqttBrokerURL != "" {
-		if err := pollutionService.InitMQTT(mqttBrokerURL, mqttClientID, mqttTopic); err != nil {
+	if cfg.MQTT.BrokerURL != "" {
+		if err := pollutionService.InitMQTT(
+			cfg.MQTT.BrokerURL, 
+			cfg.MQTT.ClientID, 
+			cfg.MQTT.Topic,
+		); err != nil {
 			log.Printf("MQTT bağlantısı başlatılamadı: %v", err)
 		} else {
-			log.Printf("MQTT istemcisi başlatıldı, broker: %s, topic: %s", mqttBrokerURL, mqttTopic)
+			log.Printf("MQTT istemcisi başlatıldı, broker: %s, topic: %s", 
+				cfg.MQTT.BrokerURL, cfg.MQTT.Topic)
 			defer pollutionService.CloseMQTT()
 		}
 	}
 
 	// Gin modunu ayarla
 	gin.SetMode(cfg.Server.Mode)
-
+	
 	// Gin router oluştur
 	router := gin.Default()
-
+	
 	// CORS middleware ekle
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Authorization")
-
+		
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-
+		
 		c.Next()
 	})
-
+	
 	// API rotalarını ayarla
 	api.SetupRoutes(router, pollutionService)
-
+	
 	// Graceful shutdown için sinyal yakalama
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
+	
 	go func() {
 		<-quit
 		log.Println("Servis kapatılıyor...")
 		pollutionService.CloseMQTT()
 		os.Exit(0)
 	}()
-
+	
 	// Sunucuyu başlat
 	log.Printf("Server starting on port %s in %s mode...", cfg.Server.Port, cfg.Server.Mode)
 	router.Run(":" + cfg.Server.Port)

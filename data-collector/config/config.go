@@ -1,4 +1,4 @@
-// config/config.go (güncelleme)
+// config/config.go
 package config
 
 import (
@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	MongoDB  MongoDBConfig
+	MQTT     MQTTConfig
 }
 
 // ServerConfig HTTP sunucu ayarları
@@ -26,20 +27,32 @@ type MongoDBConfig struct {
 	Collection string
 }
 
+// MQTTConfig MQTT bağlantı ayarları
+type MQTTConfig struct {
+	BrokerURL string
+	ClientID  string
+	Topic     string
+}
+
 // LoadConfig konfigürasyon yükler
 func LoadConfig() (*Config, error) {
 	viper.SetConfigName("config") // config.yaml, config.json, vb.
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
-	viper.AutomaticEnv() // Çevresel değişkenleri oku
+	viper.AutomaticEnv() // Çevresel değişkenleri de oku
 
 	// Varsayılan değerleri ayarla
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("server.mode", "debug")
+	
 	viper.SetDefault("mongodb.uri", "mongodb://localhost:27017")
 	viper.SetDefault("mongodb.database", "pollution_db")
 	viper.SetDefault("mongodb.collection", "raw_data")
+	
+	viper.SetDefault("mqtt.brokerurl", "mqtt://localhost:1883")
+	viper.SetDefault("mqtt.clientid", "data-collector")
+	viper.SetDefault("mqtt.topic", "pollution/#")
 
 	// Konfigürasyon dosyasını oku
 	if err := viper.ReadInConfig(); err != nil {
