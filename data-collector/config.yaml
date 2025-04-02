@@ -1,0 +1,8 @@
+server:
+  port: "8080"
+  mode: "debug"
+
+mongodb:
+  uri: "mongodb://admin:password@mongodb:27017/"
+  database: "pollution_db"
+  collection: "raw_data"
