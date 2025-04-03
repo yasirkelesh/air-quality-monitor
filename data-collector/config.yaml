@@ -10,4 +10,10 @@ mongodb:
 mqtt:
   brokerurl: "mqtt://mqtt-broker:1883"
   clientid: "data-collector"
-  topic: "pollution/#"
+  topic: "pollution"
+
+rabbitmq:
+  uri: "amqp://admin:password123@rabbitmq:5672/"
+  exchange: "pollution.data"
+  queue: "raw-data"
+  routingkey: "raw.data"

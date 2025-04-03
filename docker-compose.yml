@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=pollution_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  #mosquitto MQTT Broker
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"  # MQTT port
+      - "9001:9001"  # WebSockets port (isteğe bağlı)
+    volumes:
+      - mqtt_data:/mosquitto/data
+      - mqtt_log:/mosquitto/log
+      - ./mosquitto/config:/mosquitto/config
+    networks:
+      - app-network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+
+  # Veri toplama servisi
+  data-collector:
+    build: ./data-collector
+    container_name: data-collector
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/pollution_db?authSource=admin
+      - MONGODB_DATABASE=pollution_db
+      - MONGODB_COLLECTION=raw_data
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+    # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api-gateway/config.yaml:/root/config.yaml
+    depends_on:
+      - data-collector
+    networks:
+      - app-network
+
+volumes:
+  mongodb_data:
+  mqtt_data:
+  mqtt_log:
+  rabbitmq_data:
+
+networks:
+  app-network:

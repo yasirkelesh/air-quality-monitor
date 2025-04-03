@@ -12,6 +12,7 @@ type Config struct {
 	Server   ServerConfig
 	MongoDB  MongoDBConfig
 	MQTT     MQTTConfig
+	RabbitMQ RabbitMQConfig
 }
 
 // ServerConfig HTTP sunucu ayarları
@@ -34,6 +35,14 @@ type MQTTConfig struct {
 	Topic     string
 }
 
+type RabbitMQConfig struct {
+	URI      string
+	Exchange string
+	Queue    string
+	RoutingKey string
+}
+
+
 // LoadConfig konfigürasyon yükler
 func LoadConfig() (*Config, error) {
 	viper.SetConfigName("config") // config.yaml, config.json, vb.
@@ -53,6 +62,11 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("mqtt.brokerurl", "mqtt://localhost:1883")
 	viper.SetDefault("mqtt.clientid", "data-collector")
 	viper.SetDefault("mqtt.topic", "pollution/#")
+
+	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@localhost:5672/")
+	viper.SetDefault("rabbitmq.exchange", "pollution.data")
+	viper.SetDefault("rabbitmq.queue", "raw-data")
+	viper.SetDefault("rabbitmq.routingkey", "raw.data")
 
 	// Konfigürasyon dosyasını oku
 	if err := viper.ReadInConfig(); err != nil {
