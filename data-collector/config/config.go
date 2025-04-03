@@ -36,12 +36,11 @@ type MQTTConfig struct {
 }
 
 type RabbitMQConfig struct {
-	URI      string
-	Exchange string
-	Queue    string
+	URI        string
+	Exchange   string
+	Queue      string
 	RoutingKey string
 }
-
 
 // LoadConfig konfigürasyon yükler
 func LoadConfig() (*Config, error) {
@@ -54,16 +53,16 @@ func LoadConfig() (*Config, error) {
 	// Varsayılan değerleri ayarla
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("server.mode", "debug")
-	
-	viper.SetDefault("mongodb.uri", "mongodb://localhost:27017")
+
+	viper.SetDefault("mongodb.uri", "mongodb://mongodb:27017")
 	viper.SetDefault("mongodb.database", "pollution_db")
 	viper.SetDefault("mongodb.collection", "raw_data")
-	
-	viper.SetDefault("mqtt.brokerurl", "mqtt://localhost:1883")
+
+	viper.SetDefault("mqtt.brokerurl", "mqtt://mqtt-broker:1883")
 	viper.SetDefault("mqtt.clientid", "data-collector")
 	viper.SetDefault("mqtt.topic", "pollution/#")
 
-	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@localhost:5672/")
+	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@rabbitmqt:5672/")//buna tekrar bak gust:guest@rabbitmq:5672
 	viper.SetDefault("rabbitmq.exchange", "pollution.data")
 	viper.SetDefault("rabbitmq.queue", "raw-data")
 	viper.SetDefault("rabbitmq.routingkey", "raw.data")

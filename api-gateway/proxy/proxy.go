@@ -38,12 +38,7 @@ func (s *ServiceProxy) ReverseProxy() gin.HandlerFunc {
 
 		// Orijinal isteğin yolunu düzenle
 		// Örneğin: /api/data-collector/pollution -> /pollution
-		path := c.Param("/api/data-collector/pollution")
-		if path == "" {
-			path = c.Request.URL.Path
-		} else {
-			path = strings.TrimPrefix(path, "/api/data-collector")
-		}
+		path := c.Param("proxyPath")
 		
 		// Hedef URL oluştur
 		c.Request.URL.Path = path

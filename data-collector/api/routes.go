@@ -16,6 +16,8 @@ func SetupRoutes(router *gin.Engine, pollutionService *service.PollutionService)
 	{
 		// Veri ekleme endpoint'i
 		v1.POST("/pollution", handler.AddPollutionData)
+		// Veri listeleme endpoint'i
+		v1.GET("/pollution", handler.GetPollutionData)
 
 		// Sağlık kontrolü endpoint'i
 		v1.GET("/health", handler.GetHealth)
