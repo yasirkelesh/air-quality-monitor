@@ -1,0 +1,10 @@
+server:
+  port: "8000"
+  mode: "debug"
+
+services:
+  datacollector: "http://data-collector:8080"
+
+auth:
+  jwtsecret: "your-secret-key"
+  enabled: false
