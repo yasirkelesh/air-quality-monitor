@@ -73,11 +73,13 @@ services:
     networks:
       - app-network
 
+
 volumes:
   mongodb_data:
   mqtt_data:
   mqtt_log:
   rabbitmq_data:
 
+  # Redis
 networks:
   app-network:
