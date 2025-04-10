@@ -8,9 +8,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
-      - MONGO_INITDB_DATABASE=pollution_db
+      - .env
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -38,12 +36,25 @@ services:
       - "5672:5672"   # AMQP port
       - "15672:15672" # Management UI
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=password123
+      - .env 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
+    
+  #influxdb
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - .env
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    networks:
+      - app-network
+
 
   # Veri toplama servisi
   data-collector:
@@ -52,11 +63,26 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/pollution_db?authSource=admin
-      - MONGODB_DATABASE=pollution_db
-      - MONGODB_COLLECTION=raw_data
+      - .env
     depends_on:
+      - rabbitmq
+      - mqtt-broker
       - mongodb
+    networks:
+      - app-network
+
+
+  # data-Processing
+  data-processing:
+    build: ./data-processing
+    container_name: data-processing
+    ports:
+      - "5000:5000"
+    environment:
+      - .env
+    depends_on:
+      - rabbitmq
+      - influxdb
     networks:
       - app-network
 
@@ -66,19 +92,22 @@ services:
     container_name: api-gateway
     ports:
       - "8000:8000"
+    environment:
+      - .env
     volumes:
       - ./api-gateway/config.yaml:/root/config.yaml
     depends_on:
       - data-collector
+      - data-processing
     networks:
       - app-network
-
 
 volumes:
   mongodb_data:
   mqtt_data:
   mqtt_log:
   rabbitmq_data:
+  influxdb_data:
 
   # Redis
 networks:
