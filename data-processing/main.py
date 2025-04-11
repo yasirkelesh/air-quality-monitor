@@ -6,23 +6,29 @@ from loguru import logger
 from config import API_HOST, API_PORT
 from presentation.rabbit_consumer import RabbitMQConsumer
 from presentation.rabbit_publisher import RabbitMQPublisher
+from business.data_processor import DataProcessor
 
 # Geçici veri işleme fonksiyonu
 def process_data(raw_data):
     """
-    Geçici veri işleme fonksiyonu - ileride gerçek implementasyon ile değiştirilecek
+    RabbitMQ'dan gelen ham veriyi işle ve sonucu gönder
     """
-    logger.info(f"Veri işleniyor: {raw_data}")
-    
-    # Basit bir işleme: ham veriyi alıp, işlenmiş olarak işaretle
-    processed_data = raw_data.copy()
-    processed_data['processed'] = True
-    processed_data['processed_at'] = time.strftime('%Y-%m-%dT%H:%M:%SZ')
-    
-    # İşlenmiş veriyi gönder
-    publisher = RabbitMQPublisher()
-    publisher.publish(processed_data)
-    publisher.close()
+    try:
+        logger.info(f"Veri işleniyor: {raw_data.get('source', 'unknown')}")
+        
+        # Veri işleme servisi ile veriyi işle
+        processor = DataProcessor()
+        processed_data = processor.process(raw_data)
+        
+        # İşlenmiş veriyi gönder
+        publisher = RabbitMQPublisher()
+        publisher.publish(processed_data)
+        publisher.close()
+        
+        logger.info(f"Veri işlendi ve gönderildi: {processed_data.get('source', 'unknown')}")
+        
+    except Exception as e:
+        logger.error(f"Veri işleme hatası: {str(e)}")
 
 def start_api_server():
     """API sunucusunu başlat"""
