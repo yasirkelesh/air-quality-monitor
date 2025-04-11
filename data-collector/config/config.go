@@ -23,23 +23,23 @@ type ServerConfig struct {
 
 // MongoDBConfig MongoDB bağlantı ayarları
 type MongoDBConfig struct {
-	URI        string
-	Database   string
-	Collection string
+	URI        string `mapstructure:"uri"`
+	Database   string `mapstructure:"database"`
+	Collection string `mapstructure:"collection"`
 }
 
 // MQTTConfig MQTT bağlantı ayarları
 type MQTTConfig struct {
-	BrokerURL string
-	ClientID  string
-	Topic     string
+	BrokerURL string `mapstructure:"brokerurl"`
+	ClientID  string `mapstructure:"clientid"`
+	Topic     string `mapstructure:"topic"`
 }
 
 type RabbitMQConfig struct {
-	URI        string
-	Exchange   string
-	Queue      string
-	RoutingKey string
+	URI        string `mapstructure:"uri"`
+	Exchange   string `mapstructure:"exchange"`
+	Queue      string `mapstructure:"queue"`
+	RoutingKey string `mapstructure:"routingkey"`
 }
 
 // LoadConfig konfigürasyon yükler
@@ -62,7 +62,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("mqtt.clientid", "data-collector")
 	viper.SetDefault("mqtt.topic", "pollution/#")
 
-	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@rabbitmqt:5672/")//buna tekrar bak gust:guest@rabbitmq:5672
+	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@rabbitmqt:5672/") //buna tekrar bak gust:guest@rabbitmq:5672
 	viper.SetDefault("rabbitmq.exchange", "pollution.data")
 	viper.SetDefault("rabbitmq.queue", "raw-data")
 	viper.SetDefault("rabbitmq.routingkey", "raw.data")
