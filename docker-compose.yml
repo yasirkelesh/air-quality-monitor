@@ -8,7 +8,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - .env
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -36,7 +38,8 @@ services:
       - "5672:5672"   # AMQP port
       - "15672:15672" # Management UI
     environment:
-      - .env 
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -49,7 +52,10 @@ services:
     ports:
       - "8086:8086"
     environment:
-      - .env
+      INFLUXDB_DB: ${INFLUXDB_DB}
+      INFLUXDB_PORT: ${INFLUXDB_PORT}
+      INFLUXDB_USER: ${INFLUXDB_USER}
+      INFLUXDB_PASS: ${INFLUXDB_PASS}
     volumes:
       - influxdb_data:/var/lib/influxdb
     networks:

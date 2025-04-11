@@ -31,6 +31,11 @@ func main() {
 		cfg.MongoDB.Database,
 		cfg.MongoDB.Collection,
 	)
+	log.Printf("MongoDB URI: %s, Database: %s, Collection: %s",
+		cfg.MongoDB.URI,
+		cfg.MongoDB.Database,
+		cfg.MongoDB.Collection,
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
