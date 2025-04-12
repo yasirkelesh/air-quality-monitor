@@ -10,7 +10,7 @@ class GeocodingService:
     def __init__(self):
         """Geocoding servisini başlat"""
         self.geocoder = Nominatim(user_agent="veri_isleme_servisi")
-        self.cache = {}  # Basit önbellek
+        self.cache = {}  # Basit önbellek bu kisim gelistirilebilir 
     
     def get_geohash(self, latitude: float, longitude: float) -> str:
         """

@@ -20,6 +20,8 @@ def process_data(raw_data):
         processor = DataProcessor()
         processed_data = processor.process(raw_data)
         
+        # İşlenmiş veriyi kontrol et
+        logger.info(f"İşlenmiş veri: {processed_data}")
         # İşlenmiş veriyi gönder
         publisher = RabbitMQPublisher()
         publisher.publish(processed_data)

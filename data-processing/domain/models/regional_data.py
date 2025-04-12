@@ -11,8 +11,8 @@ class RegionalAverage(BaseModel):
     start_time: datetime
     end_time: datetime
     reading_count: int
-    pm25_avg: float
-    pm10_avg: float
-    no2_avg: float
-    so2_avg: float
-    o3_avg: float
+    pm25_avg: Optional[float] = None
+    pm10_avg: Optional[float] = None
+    no2_avg:  Optional[float] = None
+    so2_avg:  Optional[float] = None
+    o3_avg:   Optional[float] = None

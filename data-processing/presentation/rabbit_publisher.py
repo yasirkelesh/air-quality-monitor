@@ -1,12 +1,18 @@
 import json
 import pika
 from loguru import logger
+from datetime import datetime
 
 from config import (
     RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER,
     RABBITMQ_PASS, RABBITMQ_PROCESSED_QUEUE
 )
-
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super(DateTimeEncoder, self).default(obj)
+    
 class RabbitMQPublisher:
     """İşlenmiş verileri RabbitMQ'ya göndermek için publisher sınıfı"""
     
@@ -40,12 +46,12 @@ class RabbitMQPublisher:
         except Exception as e:
             logger.error(f"RabbitMQ Publisher bağlantı hatası: {str(e)}")
             return False
-    
+
     def publish(self, data):
         """İşlenmiş veriyi kuyruğa gönder"""
         try:
             # Veriyi JSON'a dönüştür
-            message = json.dumps(data)
+            message = json.dumps(data, cls=DateTimeEncoder)
             
             # Kuyruğa gönder
             self.channel.basic_publish(
