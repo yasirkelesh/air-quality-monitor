@@ -7,6 +7,8 @@ from config import API_HOST, API_PORT
 from presentation.rabbit_consumer import RabbitMQConsumer
 from presentation.rabbit_publisher import RabbitMQPublisher
 from business.data_processor import DataProcessor
+from business.aggregation_service import AggregationService
+from data_access.influxdb_repository import InfluxDBRepository
 
 # Geçici veri işleme fonksiyonu
 def process_data(raw_data):
@@ -19,6 +21,13 @@ def process_data(raw_data):
         # Veri işleme servisi ile veriyi işle
         processor = DataProcessor()
         processed_data = processor.process(raw_data)
+        
+        # Bölgesel ortalama hesapla ve ekle
+        aggregation_service = AggregationService()
+        regional_avg = aggregation_service.get_regional_average(processed_data.get("geohash"))
+        
+        if regional_avg:
+            processed_data["regional_average"] = regional_avg
         
         # İşlenmiş veriyi kontrol et
         logger.info(f"İşlenmiş veri: {processed_data}")
