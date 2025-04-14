@@ -34,3 +34,5 @@ Veri Okuma Akışı:
 
 gRPC İsteği -> gRPC Handler -> Reading Data -> MongoDB Repository -> MongoDB (verileri okur) -> gRPC Yanıtı
 Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca, gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir şekilde erişebilirler.
+\
+7tUj2EDYOYx9K2BCuvu-MPSa5BUOHBBfIydYfoexwDyilAZzz-cMXA8uMC7Me-yTE1hjXkLsDnhKzj_y0tMDMw==

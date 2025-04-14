@@ -31,6 +31,13 @@ def process_data(raw_data):
         
         # İşlenmiş veriyi kontrol et
         logger.info(f"İşlenmiş veri: {processed_data}")
+
+        # InfluxDB'ye kaydet
+        repository = InfluxDBRepository()
+        if not repository.save_processed_data(processed_data):
+            logger.error("İşlenmiş veri InfluxDB'ye kaydedilemedi")
+            return
+        logger.info("İşlenmiş veri InfluxDB'ye kaydedildi")
         # İşlenmiş veriyi gönder
         publisher = RabbitMQPublisher()
         publisher.publish(processed_data)

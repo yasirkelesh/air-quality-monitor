@@ -13,15 +13,16 @@ RABBITMQ_RAW_QUEUE = os.getenv("RABBITMQ_RAW_QUEUE", "raw-data")
 RABBITMQ_PROCESSED_QUEUE = os.getenv("RABBITMQ_PROCESSED_QUEUE", "processed-data")
 
 # InfluxDB Konfigürasyonu
-INFLUXDB_HOST = os.getenv("INFLUXDB_HOST", "localhost")
+INFLUXDB_HOST = os.getenv("INFLUXDB_HOST", "influxdb")
 INFLUXDB_PORT = int(os.getenv("INFLUXDB_PORT", "8086"))
-INFLUXDB_USER = os.getenv("INFLUXDB_USER", "")
-INFLUXDB_PASS = os.getenv("INFLUXDB_PASS", "")
-INFLUXDB_DB = os.getenv("INFLUXDB_DB", "air_quality_db")
-
+INFLUXDB_USERNAME = os.getenv("INFLUXDB_USERNAME", "admin")
+INFLUXDB_PASSWORD = os.getenv("INFLUXDB_PASSWORD", "0YEQiQN6Y7UyU2N")
+INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "data_processing")
+INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "myorg")
+INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "mytoken")
 # Geocoding Konfigürasyonu
 GEOHASH_PRECISION = int(os.getenv("GEOHASH_PRECISION", "5"))
 
 # API Konfigürasyonu
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", "9000"))
+API_PORT = int(os.getenv("API_PORT", "5000"))
