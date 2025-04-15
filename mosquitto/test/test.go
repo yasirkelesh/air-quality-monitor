@@ -13,7 +13,7 @@ const (
 	broker      = "tcp://localhost:1883" // MQTT broker adresini güncelle
 	topic       = "pollution"          // Yayınlanacak topic
 	clientID    = "go_mqtt_publisher"
-	interval    = 5 * time.Second // Veri gönderme aralığı
+	interval    = 1 * time.Second // Veri gönderme aralığı
 	maxSensorID = 5               // Kaç farklı sensör ID'si olacak
 )
 
@@ -65,8 +65,8 @@ func main() {
 
 		// Sensör verileri oluştur
 		data := SensorData{
-			Latitude:  RandomFloat(-90, 90),
-			Longitude: RandomFloat(-180, 180),
+			Latitude:  RandomFloat( 35.9025, 42.02683),
+			Longitude: RandomFloat(25.90902, 44.5742),
 			Timestamp: time.Now().Format(time.RFC3339),
 			DeviceID:  sensorID,
 		}
