@@ -1,16 +1,14 @@
-// App.js
-import Geohash from 'latlon-geohash'; // Geohash kütüphanesi
+// App.js içinde yapılacak değişiklikler
 import React, { useState, useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
+import Geohash from 'latlon-geohash'; // Geohash kütüphanesi
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './App.css';
-// Mapbox'ın ısı haritası için gerekli eklenti
-// Mapbox'ın kendi ısı haritası kullanıldığından bu import gerekli değil
-// import { HeatmapLayer } from 'react-map-gl';
 
-// Mapbox token - Gerçek uygulamada .env dosyasında saklanmalıdır
+// Mapbox token
 mapboxgl.accessToken = 'pk.eyJ1IjoibXVrZWxlcyIsImEiOiJjbTlpOGRiazcwMDF3MmtzZDUzc3VvZ3k1In0.yKyyKGnzLeQU9kreNrw8MA';
+
 
 function App() {
   const mapContainer = useRef(null);
@@ -19,7 +17,29 @@ function App() {
   const [selectedMetric, setSelectedMetric] = useState('pm25_avg');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showHeatmap, setShowHeatmap] = useState(false); // Isı haritasını gösterme durumu
+  const [showHeatmap, setShowHeatmap] = useState(true); // Varsayılan olarak açık
+  const [heatmapIntensity, setHeatmapIntensity] = useState(1.5); // Yoğunluk kontrolü
+
+  // API'den verileri çekme
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // API URL'ini environment değişkeninden al
+
+        const response = await axios.get('http://localhost:5000/regional-averages');
+        setAirQualityData(response.data);
+        setLoading(false);
+        console.log('Veri çekme başarılı:', response.data);
+      } catch (err) {
+        setError('Veriler yüklenirken hata oluştu.');
+        setLoading(false);
+        console.error('Veri çekme hatası:', err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Metriklere göre renk seçimi
   const getColor = (value, metric) => {
@@ -50,32 +70,14 @@ function App() {
     return '#999'; // Varsayılan
   };
 
-  // API'den verileri çekme
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:5000/regional-averages');
-        setAirQualityData(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError('Veriler yüklenirken hata oluştu.');
-        setLoading(false);
-        console.error('Veri çekme hatası:', err);
-      }
-    };
-
-    fetchData();
-  }, []);
-
   // Haritayı başlatma
   useEffect(() => {
     if (map.current) return; // Haritayı tekrar başlatmayı önle
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/standard-satellite',
-      center: [30.7133, 40.7667], // Kocaeli'nin yakınına başlangıç
+      style: 'mapbox://styles/mapbox/standard-satellite', // Koyu tema harita
+      center: [30.7133, 40.7667], // kullanici konumu
       zoom: 3 // Global görünüm için zoom seviyesi
     });
 
@@ -83,8 +85,9 @@ function App() {
     
     // Harita yüklendiğinde
     map.current.on('load', () => {
-      // Ana veri kaynağı - nokta gösterimi için
-      map.current.addSource('air-quality-source', {
+      // Özel ısı haritası için ekstra harita kaynaklarını ekle
+      // Sembolik bir raster kaynak oluştur (arka plan layer için)
+      map.current.addSource('empty-source', {
         type: 'geojson',
         data: {
           type: 'FeatureCollection',
@@ -92,86 +95,105 @@ function App() {
         }
       });
 
-      // Isı haritası için ikinci veri kaynağı
-      map.current.addSource('air-quality-heatmap-source', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: []
-        }
-      });
-
-      // Isı haritası katmanı ekleme
+      // Yoğunluk haritası için arka plan layer'ı ekle
       map.current.addLayer({
-        id: 'air-quality-heatmap',
-        type: 'heatmap',
-        source: 'air-quality-heatmap-source',
+        id: 'intensity-background',
+        type: 'background',
         layout: {
           visibility: 'none' // Başlangıçta gizli
         },
         paint: {
-          // Isı yoğunluğu - metriğe göre değişecek
-          'heatmap-weight': [
-            'interpolate', ['linear'], ['get', 'weight'],
-            0, 0,
-            100, 1
-          ],
-          // Zoom seviyesine göre ısı yoğunluğu
-          'heatmap-intensity': [
-            'interpolate', ['linear'], ['zoom'],
-            0, 1,
-            9, 3
-          ],
-          // Renk dağılımı
-          'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(0, 228, 0, 0)',
-            0.2, 'rgba(0, 228, 0, 0.7)',
-            0.4, 'rgba(255, 255, 0, 0.7)',
-            0.6, 'rgba(255, 126, 0, 0.7)',
-            0.8, 'rgba(255, 0, 0, 0.7)',
-            1, 'rgba(153, 0, 76, 0.7)'
-          ],
-          // Radius zoom ile değişiyor
-          'heatmap-radius': [
-            'interpolate', ['linear'], ['zoom'],
-            0, 15,
-            9, 40
-          ],
-          // Yakınlaştıkça şeffaflaşma
-          'heatmap-opacity': [
-            'interpolate', ['linear'], ['zoom'],
-            7, 1,
-            9, 0.7
-          ]
+          'background-color': 'rgba(0, 0, 0, 0)'
         }
       });
 
-      // Nokta katmanı
+      // GeoJSON veri kaynağı
+      map.current.addSource('air-quality-data', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      // Görüntüdeki gibi ısı haritası (kırmızı/turuncu gradient) 
       map.current.addLayer({
-        id: 'air-quality-circles',
+        id: 'air-quality-heat',
+        type: 'heatmap',
+        source: 'air-quality-data',
+        layout: {
+          visibility: 'visible' // Başlangıçta görünür
+        },
+        paint: {
+          // Isı haritası ağırlık özelliği
+          'heatmap-weight': [
+            'interpolate',
+            ['linear'],
+            ['get', 'value'],
+            0, 0,
+            100, 1
+          ],
+          // Isı haritası yoğunluğu (yüksek değer daha yoğun görünüm)
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            9, 5
+          ],
+          // Görseldeki gibi, yoğun kırmızı/turuncu/sarı renk dağılımı
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(236, 222, 139, 0)',
+            0.1, 'rgba(236, 222, 139, 0.5)', // açık sarı
+            0.3, 'rgba(255, 211, 0, 0.7)',   // koyu sarı
+            0.5, 'rgba(255, 140, 0, 0.8)',   // turuncu
+            0.7, 'rgba(220, 38, 38, 0.8)',   // kırmızı
+            0.9, 'rgba(140, 20, 20, 0.9)',   // koyu kırmızı
+            1, 'rgba(80, 10, 10, 0.9)'       // çok koyu kırmızı
+          ],
+          // Isı haritası yarıçapı - görseldeki gibi geniş bir etki alanı
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 15,
+            4, 25,
+            9, 50
+          ],
+          // Isı haritası opaklığı - daha yüksek opaklık
+          'heatmap-opacity': 0.9
+        }
+      });
+
+      // Noktalar katmanı
+      map.current.addLayer({
+        id: 'air-quality-point',
         type: 'circle',
-        source: 'air-quality-source',
+        source: 'air-quality-data',
         paint: {
           'circle-radius': [
-            'interpolate', ['linear'], ['zoom'],
-            3, 8,  // Zoom seviyesi 3'te boyut 8px
-            8, 16  // Zoom seviyesi 8'de boyut 16px
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            3, 6,
+            9, 12
           ],
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.8,
           'circle-stroke-width': 1,
           'circle-stroke-color': '#fff'
         }
       });
 
-      // Tooltip için popup
+      // Popup
       const popup = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false
       });
 
-      map.current.on('mouseenter', 'air-quality-circles', (e) => {
+      map.current.on('mouseenter', 'air-quality-point', (e) => {
         map.current.getCanvas().style.cursor = 'pointer';
         
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -186,7 +208,7 @@ function App() {
           <p><strong>SO2:</strong> ${properties.so2_avg} µg/m³</p>
           <p><strong>O3:</strong> ${properties.o3_avg} µg/m³</p>
           <p><strong>Okuma sayısı:</strong> ${properties.reading_count}</p>
-          <p><strong>Zaman aralığı:</strong> ${new Date(properties.start_time).toLocaleDateString()} - ${new Date(properties.end_time).toLocaleDateString()}</p>
+          <p><strong>Zaman aralığı:</strong><br>${new Date(properties.start_time).toLocaleDateString()} - ${new Date(properties.end_time).toLocaleDateString()}</p>
         `;
 
         popup.setLngLat(coordinates)
@@ -194,47 +216,28 @@ function App() {
           .addTo(map.current);
       });
 
-      map.current.on('mouseleave', 'air-quality-circles', () => {
+      map.current.on('mouseleave', 'air-quality-point', () => {
         map.current.getCanvas().style.cursor = '';
         popup.remove();
       });
     });
   }, []);
 
-  // Harita verilerini güncelleme
+  // Verileri haritaya yükleme
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded() || airQualityData.length === 0) return;
 
-    // GeoJSON veri yapısı oluşturma
+    // Daha fazla veri noktası oluştur (gerçek verileri artır)
+    const expandedData = expandAirQualityData(airQualityData);
+    
+    // GeoJSON veri yapısı oluştur
     const geojsonData = {
       type: 'FeatureCollection',
-      features: airQualityData.map(location => {
-        // Geohash'ten enlem ve boylam koordinatları çıkarma (basitleştirilmiş)
-        // Gerçek uygulamada daha doğru bir geohash çözücü kullanılmalıdır
+      features: expandedData.map(location => {
+        // Geohash'ten koordinat dönüşümü
         const [lng, lat] = decodeGeohash(location.geohash);
         
-        return {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [lng, lat]
-          },
-          properties: {
-            ...location,
-            color: getColor(location[selectedMetric], selectedMetric)
-          }
-        };
-      })
-    };
-
-    // Isı haritası için GeoJSON veri yapısı
-    const heatmapData = {
-      type: 'FeatureCollection',
-      features: airQualityData.map(location => {
-        const [lng, lat] = decodeGeohash(location.geohash);
-        
-        // Metrik değerini 0-100 arasında normalize et
-        // Bu değerler metriğe göre ayarlanabilir
+        // Metrik değerini normalize et (0-100 arası)
         let normalizedValue;
         
         if (selectedMetric === 'pm25_avg') {
@@ -253,35 +256,69 @@ function App() {
           },
           properties: {
             ...location,
-            weight: normalizedValue
+            color: getColor(location[selectedMetric], selectedMetric),
+            value: normalizedValue * heatmapIntensity // Isı haritası yoğunluk ayarı
           }
         };
       })
     };
 
-    // Nokta veri kaynağını güncelle
-    if (map.current.getSource('air-quality-source')) {
-      map.current.getSource('air-quality-source').setData(geojsonData);
+    // Veri kaynağını güncelle
+    if (map.current.getSource('air-quality-data')) {
+      map.current.getSource('air-quality-data').setData(geojsonData);
     }
     
-    // Isı haritası veri kaynağını güncelle
-    if (map.current.getSource('air-quality-heatmap-source')) {
-      map.current.getSource('air-quality-heatmap-source').setData(heatmapData);
-    }
-  }, [airQualityData, selectedMetric]);
-  
+  }, [airQualityData, selectedMetric, heatmapIntensity]);
+
   // Isı haritasını göster/gizle
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
     
     const visibility = showHeatmap ? 'visible' : 'none';
-    if (map.current.getLayer('air-quality-heatmap')) {
-      map.current.setLayoutProperty('air-quality-heatmap', 'visibility', visibility);
+    if (map.current.getLayer('air-quality-heat')) {
+      map.current.setLayoutProperty('air-quality-heat', 'visibility', visibility);
+    }
+    if (map.current.getLayer('intensity-background')) {
+      map.current.setLayoutProperty('intensity-background', 'visibility', visibility);
     }
   }, [showHeatmap]);
 
-  // Basit bir geohash dekoder (gerçek uygulamada daha doğru bir kütüphane kullanın)
-  function decodeGeohash(geohash) {
+  // Gerçek verileri sanal verilerle genişlet - daha yoğun bir ısı haritası için
+  function expandAirQualityData(data) {
+    const expandedData = [...data];
+    
+    // Her gerçek veri noktası için etrafına birkaç sanal veri noktası ekle
+    data.forEach(location => {
+      const [lng, lat] = decodeGeohash(location.geohash);
+      
+      // Mevcut veri noktasının etrafına rastgele noktalar ekle
+      for (let i = 0; i < 5; i++) {
+        const offsetLng = lng + (Math.random() - 0.5) * 5;
+        const offsetLat = lat + (Math.random() - 0.5) * 5;
+        
+        // Metrik değerlerini biraz rastgele değiştir
+        const variance = 0.8 + Math.random() * 0.4; // 0.8 ile 1.2 arası
+        
+        expandedData.push({
+          ...location,
+          geohash: `virtual_${i}_${location.geohash}`,
+          // Sanal nokta için koordinatları doğrudan sakla
+          virtual_lng: offsetLng,
+          virtual_lat: offsetLat,
+          pm25_avg: location.pm25_avg * variance,
+          pm10_avg: location.pm10_avg * variance,
+          no2_avg: location.no2_avg * variance,
+          so2_avg: location.so2_avg * variance,
+          o3_avg: location.o3_avg * variance
+        });
+      }
+    });
+    
+    return expandedData;
+  }
+
+  // Geohash decoder veya sanal koordinat alıcı
+function decodeGeohash(geohash) {
     try {
       const { lat, lon } = Geohash.decode(geohash);
       return [lon, lat]; // Mapbox [longitude, latitude] formatını bekler
@@ -296,7 +333,7 @@ function App() {
       <div className="header">
         <div className="logo-title">
         <img src={`${process.env.PUBLIC_URL}/logo512.png`} alt="Hava Kalitesi Logosu" className="app-logo" />
-          <h1>Air Quality Monitor</h1>
+          <h1>Air Quality Monitoring</h1>
         </div>
         <div className="controls">
           <div className="metric-selector">
@@ -326,6 +363,22 @@ function App() {
               <span className="toggle-slider"></span>
             </div>
           </div>
+
+          {/* Isı haritası yoğunluk kontrolü */}
+          {showHeatmap && (
+            <div className="intensity-control">
+              <label htmlFor="intensity-slider">Yoğunluk:</label>
+              <input
+                id="intensity-slider"
+                type="range"
+                min="0.5"
+                max="3"
+                step="0.1"
+                value={heatmapIntensity}
+                onChange={(e) => setHeatmapIntensity(parseFloat(e.target.value))}
+              />
+            </div>
+          )}
         </div>
       </div>
       
@@ -364,6 +417,5 @@ function App() {
     </div>
   );
 }
-
 
 export default App;
