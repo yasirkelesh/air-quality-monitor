@@ -456,7 +456,7 @@ function decodeGeohash(geohash) {
         </div>
       </div>
       
-      <div className="map-container" ref={mapContainer}>
+      <div className="map-container" ref={mapContainer} >
         {/* Son güncelleme bilgisi */}
         {lastUpdated && (
           <div className="last-updated-info">
@@ -469,11 +469,45 @@ function decodeGeohash(geohash) {
             )}
           </div>
         )}
+
+        
       </div>
       
       {/* Diğer bileşenler (legend, loading, error) */}
       
-      {loading && <div className="loading">Veriler yükleniyor...</div>}
+
+
+      <div className="legend">
+        <h3>Hava Kalitesi Göstergesi</h3>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#00e400' }}></span>
+          <span>İyi</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#ffff00' }}></span>
+          <span>Orta</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#ff7e00' }}></span>
+          <span>Hassas Gruplar İçin Sağlıksız</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#ff0000' }}></span>
+          <span>Sağlıksız</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#99004c' }}></span>
+          <span>Çok Sağlıksız</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: '#7e0023' }}></span>
+          <span>Tehlikeli</span>
+        </div>
+      </div>
+
+
+
+      {loading && <div className="loading">Veriler yükleniyor...</div> }
       {error && <div className="error">{error}</div>}
     </div>
   );
