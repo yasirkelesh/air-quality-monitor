@@ -1,5 +1,5 @@
 // App.js içinde yapılacak değişiklikler
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import Geohash from 'latlon-geohash'; // Geohash kütüphanesi
@@ -20,26 +20,60 @@ function App() {
   const [showHeatmap, setShowHeatmap] = useState(true); // Varsayılan olarak açık
   const [heatmapIntensity, setHeatmapIntensity] = useState(1.5); // Yoğunluk kontrolü
 
-  // API'den verileri çekme
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // API URL'ini environment değişkeninden al
+  const [autoUpdate, setAutoUpdate] = useState(false); // Başlangıçta kapalı
+  const [updateInterval, setUpdateInterval] = useState(60); // Varsayılan 60 saniye
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const intervalRef = useRef(null); // setInterval referansını saklamak için
 
-        const response = await axios.get('http://localhost:5000/regional-averages');
-        setAirQualityData(response.data);
-        setLoading(false);
-        console.log('Veri çekme başarılı:', response.data);
-      } catch (err) {
-        setError('Veriler yüklenirken hata oluştu.');
-        setLoading(false);
-        console.error('Veri çekme hatası:', err);
+
+   // Veri çekme fonksiyonu - useCallback ile memoize ediliyor
+   const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // API URL'ini environment değişkeninden al
+      const response = await axios.get('http://localhost:5000/regional-averages');
+      
+      setAirQualityData(response.data);
+      setLastUpdated(new Date());
+      setLoading(false);
+      setError(null);
+    } catch (err) {
+      setError('Veriler yüklenirken hata oluştu.');
+      setLoading(false);
+      console.error('Veri çekme hatası:', err);
+    }
+  }, []);
+
+  // İlk veri yüklemesi
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Otomatik güncelleme zamanlayıcısı
+  useEffect(() => {
+    // Önceki interval'ı temizle
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    // Eğer autoUpdate açıksa yeni interval oluştur
+    if (autoUpdate) {
+      intervalRef.current = setInterval(() => {
+        fetchData();
+      }, updateInterval * 1000);
+      
+      console.log(`Otomatik güncelleme aktif: ${updateInterval} saniye aralıkla`);
+    }
+    
+    // Component unmount olduğunda veya dependency değiştiğinde interval'ı temizle
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
-
-    fetchData();
-  }, []);
+  }, [autoUpdate, updateInterval, fetchData]);
+ 
 
   // Metriklere göre renk seçimi
   const getColor = (value, metric) => {
@@ -364,7 +398,6 @@ function decodeGeohash(geohash) {
             </div>
           </div>
 
-          {/* Isı haritası yoğunluk kontrolü */}
           {showHeatmap && (
             <div className="intensity-control">
               <label htmlFor="intensity-slider">Yoğunluk:</label>
@@ -379,38 +412,66 @@ function decodeGeohash(geohash) {
               />
             </div>
           )}
+          
+          {/* Veri güncelleme kontrolleri */}
+          <div className="update-section">
+            <div className="auto-update-toggle">
+              <label htmlFor="auto-update-toggle">Otomatik Güncelleme:</label>
+              <div className="toggle-switch">
+                <input
+                  id="auto-update-toggle"
+                  type="checkbox"
+                  checked={autoUpdate}
+                  onChange={() => setAutoUpdate(!autoUpdate)}
+                />
+                <span className="toggle-slider"></span>
+              </div>
+            </div>
+            
+            <div className="interval-select">
+              <label htmlFor="update-interval">Güncelleme Sıklığı:</label>
+              <select
+                id="update-interval"
+                value={updateInterval}
+                onChange={(e) => setUpdateInterval(parseInt(e.target.value))}
+                disabled={!autoUpdate}
+              >
+                <option value="10">10 saniye</option>
+                <option value="30">30 saniye</option>
+                <option value="60">1 dakika</option>
+                <option value="300">5 dakika</option>
+                <option value="600">10 dakika</option>
+                <option value="1800">30 dakika</option>
+              </select>
+            </div>
+            
+            <button 
+              className="manual-update-btn"
+              onClick={fetchData}
+              disabled={loading}
+            >
+              {loading ? 'Güncelleniyor...' : 'Şimdi Güncelle'}
+            </button>
+          </div>
         </div>
       </div>
       
-      <div className="map-container" ref={mapContainer} />
-      
-      <div className="legend">
-        <h3>Hava Kalitesi Göstergesi</h3>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#00e400' }}></span>
-          <span>İyi</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#ffff00' }}></span>
-          <span>Orta</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#ff7e00' }}></span>
-          <span>Hassas Gruplar İçin Sağlıksız</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#ff0000' }}></span>
-          <span>Sağlıksız</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#99004c' }}></span>
-          <span>Çok Sağlıksız</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color" style={{ backgroundColor: '#7e0023' }}></span>
-          <span>Tehlikeli</span>
-        </div>
+      <div className="map-container" ref={mapContainer}>
+        {/* Son güncelleme bilgisi */}
+        {lastUpdated && (
+          <div className="last-updated-info">
+            <span className="update-indicator"></span>
+            Son güncelleme: {lastUpdated.toLocaleTimeString()}
+            {autoUpdate && (
+              <span className="next-update-info">
+                Sonraki güncelleme: {new Date(lastUpdated.getTime() + updateInterval * 1000).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+        )}
       </div>
+      
+      {/* Diğer bileşenler (legend, loading, error) */}
       
       {loading && <div className="loading">Veriler yükleniyor...</div>}
       {error && <div className="error">{error}</div>}
