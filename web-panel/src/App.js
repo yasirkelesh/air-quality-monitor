@@ -4,6 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
 import Geohash from 'latlon-geohash'; // Geohash kütüphanesi
 import 'mapbox-gl/dist/mapbox-gl.css';
+import LocationAnalysisPanel from './LocationAnalysisPanel'; 
 import './App.css';
 
 // Mapbox token
@@ -25,6 +26,9 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const intervalRef = useRef(null); // setInterval referansını saklamak için
 
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
    // Veri çekme fonksiyonu - useCallback ile memoize ediliyor
    const fetchData = useCallback(async () => {
@@ -127,6 +131,17 @@ function App() {
           type: 'FeatureCollection',
           features: []
         }
+      });
+
+      map.current.on('click', (e) => {
+        // Tıklanan noktanın koordinatlarını al
+        const coordinates = [e.lngLat.lng, e.lngLat.lat];
+        
+        // Seçilen konumu güncelle
+        setSelectedLocation(coordinates);
+        
+        // Paneli aç
+        setIsPanelOpen(true);
       });
 
       // Yoğunluk haritası için arka plan layer'ı ekle
@@ -469,6 +484,15 @@ function decodeGeohash(geohash) {
             )}
           </div>
         )}
+
+        {/* Konum analiz paneli */}
+        <LocationAnalysisPanel 
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          selectedLocation={selectedLocation}
+          airQualityData={airQualityData}
+          selectedMetric={selectedMetric}
+        />
 
         
       </div>
