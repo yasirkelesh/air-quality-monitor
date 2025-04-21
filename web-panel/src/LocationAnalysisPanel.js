@@ -152,13 +152,6 @@ const LocationAnalysisPanel = ({ isOpen, onClose, selectedLocation, airQualityDa
     return [lng, lat];
   };
 
-  // Arama işlemi
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Burada arama işlemleri yapılabilir
-    // Örneğin, API'ye koordinat veya yer ismi sorgusu gönderilebilir
-    console.log("Arama sorgusu:", searchQuery);
-  };
 
   // AQI rengini hesapla
   const getAQIColor = (value, metric) => {
@@ -211,23 +204,7 @@ const LocationAnalysisPanel = ({ isOpen, onClose, selectedLocation, airQualityDa
         </button>
       </div>
 
-      <div className="panel-search">
-        <form onSubmit={handleSearch}>
-          <div className="search-input-container">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Konum ara veya koordinat gir"
-              className="search-input"
-            />
-            <button type="submit" className="search-button">
-              <SearchIcon />
-            </button>
-          </div>
-        </form>
-      </div>
-
+ 
       {locationDetails && (
         <div className="location-details">
           <div className="coordinates-display">
