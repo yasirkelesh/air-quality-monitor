@@ -41,6 +41,8 @@ def process_data(raw_data):
         # İşlenmiş veriyi gönder
         publisher = RabbitMQPublisher()
         publisher.publish(processed_data)
+        #processed datayi logla
+        logger.info(f"İşlenmiş veri RabbitMQ'ya gönderildi: {processed_data.get('source', 'unknown')}")
         publisher.close()
         
         logger.info(f"Veri işlendi ve gönderildi: {processed_data.get('source', 'unknown')}")

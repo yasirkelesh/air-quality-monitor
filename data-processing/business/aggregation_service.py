@@ -13,16 +13,22 @@ class AggregationService:
     def get_regional_average(self, geohash: str, hours: int = 24) -> Optional[Dict[str, Any]]:
         """
         Belirli bir geohash bölgesi için ortalama değerleri hesaplar
-        
+
         Args:
             geohash: Sorgulanacak geohash
             hours: Son kaç saatlik veri (varsayılan: 24)
-            
+
         Returns:
             Bölgesel ortalama değerler
         """
         try:
-            return self.repository.get_regional_average(geohash, hours)
+            # 25 km yarıçap için geohash'in ilk 3 karakterini kullan
+            if len(geohash) >= 3:
+                regional_geohash = geohash[:3]
+            else:
+                regional_geohash = geohash
+            logger.info(f"Geohash: {geohash}, Bölgesel Geohash: {regional_geohash}")
+            return self.repository.get_regional_average(regional_geohash, hours)
         except Exception as e:
             logger.error(f"Bölgesel ortalama hesaplama hatası: {str(e)}")
             return None

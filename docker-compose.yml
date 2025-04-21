@@ -63,20 +63,30 @@ services:
     networks:
       - app-network
   
-  nginx:
-    image: nginx:latest
-    container_name: nginx
+  web-panel:
+    build:
+      context: ./web-panel
+      dockerfile: Dockerfile
+    container_name: web-panel
     ports:
       - "80:80"
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=/api
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - .env
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./api-gateway/config.yaml:/root/config.yaml
     depends_on:
-      - web-panel
+      - data-collector
+      - data-processing
     networks:
       - app-network
-    restart: unless-stopped
-
-
   # Veri toplama servisi
   data-collector:
     build: ./data-collector
@@ -107,32 +117,22 @@ services:
     networks:
       - app-network
 
-    # API Gateway
-  api-gateway:
-    build: ./api-gateway
-    container_name: api-gateway
+    # anomaly-detection
+  anomaly-detection:
+    build: ./anomaly-detection
+    container_name: anomaly-detection
     ports:
-      - "8000:8000"
+      - "6000:6000"
     environment:
-      - .env
-    volumes:
-      - ./api-gateway/config.yaml:/root/config.yaml
+      - PYTHONPATH=/app
     depends_on:
-      - data-collector
-      - data-processing
+      - rabbitmq
+      - influxdb
     networks:
       - app-network
-    
-  web-panel:
-    build:
-      context: ./web-panel
-      dockerfile: Dockerfile
-    container_name: web-panel
-    ports:
-      - "80:80"
-    restart: unless-stopped
-    environment:
-      - REACT_APP_API_URL=/api
+
+
+
 
 volumes:
   mongodb_data:

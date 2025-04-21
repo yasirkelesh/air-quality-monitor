@@ -36,7 +36,7 @@ async def get_regional_average(
         result = aggregation_service.get_regional_average(geohash, hours)
         
         if not result:
-            raise HTTPException(status_code=404, detail=f"Geohash için veri bulunamadı: {geohash}")
+            raise HTTPException(status_code=404, detail=f": {geohash}")
         
         return result
     except HTTPException as e:

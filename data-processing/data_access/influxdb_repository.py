@@ -116,18 +116,21 @@ class InfluxDBRepository:
             # Zaman aralığını hesapla (şu andan geriye doğru X saat)
             start_time = f"-{hours}h"
             
+            geohash_prefix = geohash[:3] if len(geohash) >= 3 else geohash
             # Flux sorgusu oluştur (InfluxDB v2 için Flux dili kullanılır)
             flux_query = f'''
-                from(bucket: "{INFLUXDB_BUCKET}")
-                    |> range(start: {start_time})
-                    |> filter(fn: (r) => r._measurement == "air_quality")
-                    |> filter(fn: (r) => r.geohash == "{geohash}")
-                    |> filter(fn: (r) => r._field == "pm25" or r._field == "pm10" or 
-                                         r._field == "no2" or r._field == "so2" or 
-                                         r._field == "o3")
-                    |> mean()
-                    |> group(columns: ["_field"])
-            '''
+                        import "strings"
+                        
+                        from(bucket: "{INFLUXDB_BUCKET}")
+                            |> range(start: {start_time})
+                            |> filter(fn: (r) => r._measurement == "air_quality")
+                            |> filter(fn: (r) => r.geohash =~ /^{geohash_prefix}.*/)
+                            |> filter(fn: (r) => r._field == "pm25" or r._field == "pm10" or 
+                                                 r._field == "no2" or r._field == "so2" or 
+                                                 r._field == "o3")
+                            |> mean()
+                            |> group(columns: ["_field"])
+                    '''
             
             # Sorguyu çalıştır
             tables = self.query_api.query(query=flux_query, org=INFLUXDB_ORG)

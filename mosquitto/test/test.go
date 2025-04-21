@@ -65,21 +65,23 @@ func main() {
 
 		// Sensör verileri oluştur
 		data := SensorData{
-			Latitude:  RandomFloat( 35.9025, 42.02683),
-			Longitude: RandomFloat(25.90902, 44.5742),
+			//Latitude:  RandomFloat(40.7128, 41.94),
+			//Longitude: RandomFloat(29.949065, 30.224995),
+			Latitude: 40.714331,
+			Longitude: 29.945292,
 			Timestamp: time.Now().Format(time.RFC3339),
 			DeviceID:  sensorID,
 		}
 		data.PM25 = new(float64)
-		*data.PM25 = RandomFloat(0, 100)
+		*data.PM25 = RandomFloat(0, 10)
 		data.PM10 = new(float64)
-		*data.PM10 = RandomFloat(0, 100)
+		*data.PM10 = RandomFloat(0, 10)
 		data.NO2 = new(float64)
-		*data.NO2 = RandomFloat(0, 100)
+		*data.NO2 = RandomFloat(0, 10)
 		data.SO2 = new(float64)
-		*data.SO2 = RandomFloat(0, 100)
+		*data.SO2 = RandomFloat(0, 10)
 		data.O3 = new(float64)
-		*data.O3 = RandomFloat(0, 100)
+		*data.O3 = RandomFloat(0, 10)
 		// JSON formatına dönüştür
 		payload, err := json.Marshal(data)
 		if err != nil {
