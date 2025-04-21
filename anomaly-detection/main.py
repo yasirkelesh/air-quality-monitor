@@ -4,6 +4,10 @@ from loguru import logger
 from presentation.rabbit_consumer import RabbitMQConsumer
 from business.anomaly_detector import AnomalyDetector
 from domain.models.processed_data import ProcessedData
+from data_access.anomaly_repository import AnomalyRepository
+
+
+anomaly_repository = AnomalyRepository()
 
 def process_message(message):
     """
@@ -26,7 +30,12 @@ def process_message(message):
             logger.warning(f"Anomali tespit edildi - Kaynak: {data.source}")
             for anomaly in anomalies:
                 logger.warning(f"[{anomaly.anomaly_type}] {anomaly.description}")
-                # TODO: MongoDB'ye kaydet
+                
+                # MongoDB'ye kaydet
+                saved_id = anomaly_repository.save_anomaly(anomaly)
+                if saved_id:
+                    logger.info(f"Anomali MongoDB'ye kaydedildi: {saved_id}")
+
                 # TODO: WebSocket üzerinden bildir
         else:
             logger.info(f"Anomali bulunamadı - Kaynak: {data.source}")
