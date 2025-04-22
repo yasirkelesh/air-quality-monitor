@@ -1,15 +1,18 @@
-// App.js içinde yapılacak değişiklikler
+// App.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import axios from 'axios';
-import Geohash from 'latlon-geohash'; // Geohash kütüphanesi
+import Geohash from 'latlon-geohash';
+import * as turf from '@turf/turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import LocationAnalysisPanel from './LocationAnalysisPanel'; 
 import './App.css';
 
 // Mapbox token
 mapboxgl.accessToken = 'pk.eyJ1IjoibXVrZWxlcyIsImEiOiJjbTlpOGRiazcwMDF3MmtzZDUzc3VvZ3k1In0.yKyyKGnzLeQU9kreNrw8MA';
-
+const SSE_URL = '/sse-events';
+const ANOMALIES_URL = '/anomalies'; // Anomali servisi URL'si
+const REGIONAL_AVERAGES_URL = '/regional-averages'; // Bölgesel ortalama servisi URL'si
 
 function App() {
   const mapContainer = useRef(null);
@@ -18,25 +21,282 @@ function App() {
   const [selectedMetric, setSelectedMetric] = useState('pm25_avg');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showHeatmap, setShowHeatmap] = useState(true); // Varsayılan olarak açık
-  const [heatmapIntensity, setHeatmapIntensity] = useState(1.5); // Yoğunluk kontrolü
-
-  const [autoUpdate, setAutoUpdate] = useState(false); // Başlangıçta kapalı
-  const [updateInterval, setUpdateInterval] = useState(60); // Varsayılan 60 saniye
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [heatmapIntensity, setHeatmapIntensity] = useState(1.5);
+  const [autoUpdate, setAutoUpdate] = useState(false);
+  const [updateInterval, setUpdateInterval] = useState(60);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const intervalRef = useRef(null); // setInterval referansını saklamak için
-
-
+  const intervalRef = useRef(null);
+  const [showAnomalySummary, setShowAnomalySummary] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  
+  // Anomali takibi için yeni state
+  const [anomalies, setAnomalies] = useState([]);
+  const [sseStatus, setSseStatus] = useState('connecting'); // 'connecting', 'connected', 'error', 'closed'
+  const anomalyTimeouts = useRef({});
+  const anomalyEventSource = useRef(null);
+   // Anomali servisi URL'si
+  // SSE bağlantısı için useEffect
 
-   // Veri çekme fonksiyonu - useCallback ile memoize ediliyor
-   const fetchData = useCallback(async () => {
+
+  useEffect(() => {
+    console.log('SSE bağlantısı başlatılıyor...');
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+
+    const connectToAnomalyStream = () => {
+      // Önceki bağlantıyı kapat
+      if (anomalyEventSource.current) {
+        anomalyEventSource.current.close();
+      }
+
+      // SSE bağlantısı kur
+      try {
+        console.log('SSE bağlantısı kuruluyor...');
+        setSseStatus('connecting');
+        
+        anomalyEventSource.current = new EventSource(SSE_URL);
+        
+        anomalyEventSource.current.onopen = () => {
+          console.log('SSE bağlantısı açıldı');
+          setSseStatus('connected');
+          reconnectAttempts = 0;
+        };
+        
+        anomalyEventSource.current.onmessage = (event) => {
+          try {
+            const anomalyData = JSON.parse(event.data);
+            console.log('Yeni anomali alındı:', anomalyData);
+            
+            // Anomaliyi listeye ekle
+            setAnomalies(prevAnomalies => [...prevAnomalies, anomalyData]);
+            
+            // 1 saat sonra anomaliyi kaldır
+            anomalyTimeouts.current[anomalyData.id] = setTimeout(() => {
+              setAnomalies(prevAnomalies => 
+                prevAnomalies.filter(anomaly => anomaly.id !== anomalyData.id)
+              );
+              delete anomalyTimeouts.current[anomalyData.id];
+            }, 3600000); // 1 saat = 3600000 ms
+          } catch (parseError) {
+            console.error('Anomali verisi parse edilemedi:', parseError);
+          }
+        };
+
+        anomalyEventSource.current.onerror = (error) => {
+          console.error('SSE Bağlantı hatası:', error);
+          setSseStatus('error');
+          anomalyEventSource.current.close();
+          
+          // Yeniden bağlanma mantığı
+          if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            const delay = Math.min(5000 * reconnectAttempts, 30000); // Max 30 saniye
+            console.log(`Yeniden bağlanma denemesi ${reconnectAttempts} / ${maxReconnectAttempts}. ${delay/1000} saniye sonra...`);
+            setTimeout(connectToAnomalyStream, delay);
+          } else {
+            console.error('SSE bağlantısı kurulamadı. Maksimum deneme aşıldı.');
+            setSseStatus('closed');
+          }
+        };
+        
+      } catch (error) {
+        console.error('SSE bağlantısı başlatılamadı:', error);
+        setSseStatus('error');
+      }
+    };
+
+    connectToAnomalyStream();
+
+    // Cleanup
+    return () => {
+      if (anomalyEventSource.current) {
+        anomalyEventSource.current.close();
+      }
+      // Tüm timeout'ları temizle
+      const timeouts = anomalyTimeouts.current;
+      Object.values(timeouts).forEach(clearTimeout);
+    };
+  }, []);
+
+  // Anomali çemberlerini haritaya eklemek için useEffect
+// Anomali çemberlerini haritaya eklemek için useEffect
+useEffect(() => {
+  if (!map.current) return; 
+  
+  // Harita hazır değilse bekle
+  if (!map.current.isStyleLoaded()) {
+    console.log('Harita henüz yüklenmedi, çember çizimi erteleniyor...');
+    
+    // Harita hazır olduğunda yeniden dene
+    const checkMapAndDrawCircles = () => {
+      if (map.current && map.current.isStyleLoaded()) {
+        console.log('Harita hazır, çemberler çiziliyor...');
+        drawAnomalyCircles();
+      } else {
+        console.log('Harita hala hazır değil, tekrar deneniyor...');
+        setTimeout(checkMapAndDrawCircles, 500);
+      }
+    };
+    
+    checkMapAndDrawCircles();
+    return;
+  }
+  
+  // Çember çizme fonksiyonu
+  function drawAnomalyCircles() {
+    console.log(`Çemberler çiziliyor... (${anomalies.length} anomali)`);
+    
+    // Anomali verisini güncelle - her anomali için 25km yarıçaplı çember oluştur
+    const anomalyFeatures = anomalies.flatMap(anomaly => {
+      // Merkez noktası (anomali pozisyonu)
+      const centerPoint = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [anomaly.longitude, anomaly.latitude]
+        },
+        properties: {
+          id: anomaly.id,
+          description: anomaly.description,
+          pollutant: anomaly.pollutant,
+          current_value: anomaly.current_value,
+          average_value: anomaly.average_value,
+          increase_ratio: anomaly.increase_ratio,
+          timestamp: anomaly.timestamp,
+          type: 'center'
+        }
+      };
+
+      // 25km yarıçaplı çember (polygon olarak)
+      const circle = turf.circle(
+        [anomaly.longitude, anomaly.latitude], 
+        25, // 25 km yarıçap
+        {
+          steps: 64, // Daha yumuşak bir çember için
+          units: 'kilometers'
+        }
+      );
+
+      circle.properties = {
+        id: anomaly.id,
+        type: 'area'
+      };
+
+      return [centerPoint, circle];
+    });
+
+    // Anomali kaynağını güncelle veya oluştur
+    if (map.current.getSource('anomaly-data')) {
+      console.log('Mevcut anomali kaynağı güncelleniyor...');
+      map.current.getSource('anomaly-data').setData({
+        type: 'FeatureCollection',
+        features: anomalyFeatures
+      });
+    } else {
+      console.log('Yeni anomali kaynağı oluşturuluyor...');
+      
+      // İlk kez oluşturuluyorsa kaynak ve katmanları ekle
+      try {
+        map.current.addSource('anomaly-data', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: anomalyFeatures
+          }
+        });
+
+        // 25km'lik çemberler için layer ekle
+        map.current.addLayer({
+          id: 'anomaly-circles',
+          type: 'fill',
+          source: 'anomaly-data',
+          filter: ['==', ['get', 'type'], 'area'],
+          paint: {
+            'fill-color': 'rgba(255, 0, 0, 0.2)',
+            'fill-opacity': 0.5
+          }
+        });
+
+        // Çember sınırları için kontur
+        map.current.addLayer({
+          id: 'anomaly-circles-outline',
+          type: 'line',
+          source: 'anomaly-data',
+          filter: ['==', ['get', 'type'], 'area'],
+          paint: {
+            'line-color': 'rgba(255, 0, 0, 0.8)',
+            'line-width': 2
+          }
+        });
+
+        // Anomali merkezleri için nokta işaretçileri
+        map.current.addLayer({
+          id: 'anomaly-centers',
+          type: 'circle',
+          source: 'anomaly-data',
+          filter: ['==', ['get', 'type'], 'center'],
+          paint: {
+            'circle-radius': 5,
+            'circle-color': '#ff0000',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+
+        // Anomali popup
+        const anomalyPopup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false
+        });
+
+        map.current.on('mouseenter', 'anomaly-centers', (e) => {
+          map.current.getCanvas().style.cursor = 'pointer';
+          
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          const properties = e.features[0].properties;
+          
+          const time = new Date(properties.timestamp).toLocaleString();
+          const html = `
+            <div class="anomaly-popup">
+              <h3><strong>⚠️ Anomali Tespit Edildi</strong></h3>
+              <p><strong>Kirletici:</strong> ${properties.pollutant.toUpperCase()}</p>
+              <p><strong>Değer:</strong> ${properties.current_value.toFixed(2)} µg/m³</p>
+              <p><strong>Normal Ortalama:</strong> ${properties.average_value} µg/m³</p>
+              <p><strong>Artış Oranı:</strong> %${(properties.increase_ratio * 100).toFixed(1)}</p>
+              <p><strong>Zaman:</strong> ${time}</p>
+              <p><strong>Etki Alanı:</strong> 25km yarıçaplı</p>
+              <p class="anomaly-description">${properties.description}</p>
+            </div>
+          `;
+
+          anomalyPopup.setLngLat(coordinates)
+            .setHTML(html)
+            .addTo(map.current);
+        });
+
+        map.current.on('mouseleave', 'anomaly-centers', () => {
+          map.current.getCanvas().style.cursor = '';
+          anomalyPopup.remove();
+        });
+        
+        console.log('Anomali katmanları başarıyla eklendi');
+      } catch (error) {
+        console.error('Anomali çemberlerini oluştururken hata:', error);
+      }
+    }
+  }
+  
+  // Çember çizme fonksiyonunu çağır
+  drawAnomalyCircles();
+  
+}, [anomalies]);
+  // Veri çekme fonksiyonu - useCallback ile memoize ediliyor
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      // API URL'ini environment değişkeninden al
-      const response = await axios.get('http://localhost:5000/regional-averages');
-      
+      const response = await axios.get(REGIONAL_AVERAGES_URL);
       setAirQualityData(response.data);
       setLastUpdated(new Date());
       setLoading(false);
@@ -48,20 +308,88 @@ function App() {
     }
   }, []);
 
+
+  const fetchExistingAnomalies = useCallback(async () => {
+    try {
+      console.log('Mevcut anomaliler yükleniyor...');
+      const response = await axios.get(ANOMALIES_URL);
+      
+      if (response.data && response.data.anomalies && Array.isArray(response.data.anomalies)) {
+        console.log(`${response.data.count} adet mevcut anomali bulundu`);
+        
+        // Verileri SSE formatına dönüştür ve state'e ekle
+        const formattedAnomalies = response.data.anomalies.map(anomaly => ({
+          id: anomaly._id,
+          source: anomaly.source,
+          timestamp: anomaly.timestamp,
+          anomaly_type: anomaly.anomaly_type,
+          pollutant: anomaly.pollutant,
+          current_value: anomaly.current_value,
+          average_value: anomaly.average_value,
+          increase_ratio: anomaly.increase_ratio,
+          geohash: anomaly.geohash,
+          geohash_prefix: anomaly.geohash_prefix,
+          // Koordinatları doğrudan alınabilir formata çevir
+          longitude: anomaly.location.coordinates[0],
+          latitude: anomaly.location.coordinates[1],
+          country: anomaly.country,
+          city: anomaly.city,
+          district: anomaly.district,
+          description: anomaly.description,
+          detected_at: anomaly.detected_at,
+          expiry_time: anomaly.expiry_time
+        }));
+        
+        setAnomalies(formattedAnomalies);
+        
+        // Her anomali için sona erme zamanına göre otomatik kaldırma 
+        formattedAnomalies.forEach(anomaly => {
+          const expiryTime = new Date(anomaly.expiry_time);
+          const now = new Date();
+          
+          // Sona erme süresi gelecekte mi kontrol et
+          if (expiryTime > now) {
+            const timeoutDuration = expiryTime.getTime() - now.getTime();
+            console.log(`Anomali ${anomaly.id} için ${timeoutDuration}ms sonra kaldırılacak`);
+            
+            anomalyTimeouts.current[anomaly.id] = setTimeout(() => {
+              setAnomalies(prevAnomalies => 
+                prevAnomalies.filter(a => a.id !== anomaly.id)
+              );
+              delete anomalyTimeouts.current[anomaly.id];
+            }, timeoutDuration);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Mevcut anomalileri yükleme hatası:', err);
+    }
+  }, []);
+
   // İlk veri yüklemesi
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    
+    // Harita yüklendikten sonra anomalileri çekmeyi garantiye almak için
+    // Hem ilk yüklemede hem de harita hazır olduğunda anomalileri çek
+    fetchExistingAnomalies();
+    
+    // Harita hazır olduğunda ayrıca kontrol et (geç yüklenen haritalar için)
+    if (map.current) {
+      map.current.on('load', () => {
+        console.log('Harita yüklendi, anomaliler yeniden çekiliyor...');
+        fetchExistingAnomalies();
+      });
+    }
+  }, [fetchData, fetchExistingAnomalies]);
 
   // Otomatik güncelleme zamanlayıcısı
   useEffect(() => {
-    // Önceki interval'ı temizle
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
     
-    // Eğer autoUpdate açıksa yeni interval oluştur
     if (autoUpdate) {
       intervalRef.current = setInterval(() => {
         fetchData();
@@ -70,15 +398,15 @@ function App() {
       console.log(`Otomatik güncelleme aktif: ${updateInterval} saniye aralıkla`);
     }
     
-    // Component unmount olduğunda veya dependency değiştiğinde interval'ı temizle
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
   }, [autoUpdate, updateInterval, fetchData]);
- 
 
+  // ... (Mevcut kodun geri kalanı aynı kalacak)
+  
   // Metriklere göre renk seçimi
   const getColor = (value, metric) => {
     // AQI skalasına yakın renkler (metriğe göre ayarlanabilir)
@@ -333,7 +661,7 @@ function App() {
   }, [showHeatmap]);
 
   // Gerçek verileri sanal verilerle genişlet - daha yoğun bir ısı haritası için
-  function expandAirQualityData(data) {
+  const expandAirQualityData = useCallback((data) => {
     const expandedData = [...data];
     
     // Her gerçek veri noktası için etrafına birkaç sanal veri noktası ekle
@@ -364,7 +692,7 @@ function App() {
     });
     
     return expandedData;
-  }
+  }, []);
 
   // Geohash decoder veya sanal koordinat alıcı
 function decodeGeohash(geohash) {
@@ -485,6 +813,77 @@ function decodeGeohash(geohash) {
           </div>
         )}
 
+        {/* Anomali bildirim bölümü */}
+        {anomalies.length > 0 && (
+          <div className="anomaly-notification">
+            <div className="anomaly-header">
+              <span className="anomaly-icon">⚠️</span>
+              <span>Aktif Anomaliler: {anomalies.length}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Anomali tablosu toggle butonu */}
+        {anomalies.length > 0 && !showAnomalySummary && (
+          <div 
+            className="anomaly-summary-toggle"
+            onClick={() => setShowAnomalySummary(true)}
+          >
+            <span className="anomaly-icon">⚠️</span>
+            <span>Anomali Listesini Göster ({anomalies.length})</span>
+          </div>
+        )}
+
+        {/* Anomali özet tablosu */}
+        {showAnomalySummary && (
+          <div className="anomaly-summary">
+            <h3>
+              <span className="anomaly-icon">⚠️</span>
+              <span>Aktif Anomaliler ({anomalies.length})</span>
+              <button 
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+                onClick={() => setShowAnomalySummary(false)}
+              >
+                ✕
+              </button>
+            </h3>
+            
+            {anomalies.length > 0 ? (
+              <table className="anomaly-summary-table">
+                <thead>
+                  <tr>
+                    <th>Kirletici</th>
+                    <th>Değer</th>
+                    <th>Artış</th>
+                    <th>Konum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {anomalies.map(anomaly => (
+                    <tr key={anomaly.id}>
+                      <td>
+                        <span className={`pollutant-badge pollutant-${anomaly.pollutant}`}>
+                          {anomaly.pollutant.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className={anomaly.increase_ratio > 3 ? 'critical' : ''}>
+                        {anomaly.current_value.toFixed(1)} µg/m³
+                      </td>
+                      <td>
+                        {(anomaly.increase_ratio * 100).toFixed(0)}%
+                      </td>
+                      <td>
+                        {anomaly.district || anomaly.city || anomaly.country || 'Bilinmiyor'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Aktif anomali bulunmuyor.</p>
+            )}
+          </div>
+        )}
         {/* Konum analiz paneli */}
         <LocationAnalysisPanel 
           isOpen={isPanelOpen}
@@ -494,13 +893,30 @@ function decodeGeohash(geohash) {
           selectedMetric={selectedMetric}
         />
 
-        
+        {/* SSE bağlantı durumu göstergesi */}
+        <div className={`sse-status ${sseStatus}`}>
+          <span className="status-indicator"></span>
+          <span className="status-text">
+            {sseStatus === 'connecting' && 'Anomali servisi bağlanıyor...'}
+            {sseStatus === 'connected' && 'Anomali servisi aktif'}
+            {sseStatus === 'error' && 'Bağlantı hatası'}
+            {sseStatus === 'closed' && 'Bağlantı kapalı'}
+          </span>
+        </div>
+
+        {/* Anomali bildirim bölümü */}
+        {anomalies.length > 0 && (
+          <div className="anomaly-notification">
+            <div className="anomaly-header">
+              <span className="anomaly-icon">⚠️</span>
+              <span>Aktif Anomaliler: {anomalies.length}</span>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Diğer bileşenler (legend, loading, error) */}
       
-
-
       <div className="legend">
         <h3>Hava Kalitesi Göstergesi</h3>
         <div className="legend-item">
@@ -528,8 +944,6 @@ function decodeGeohash(geohash) {
           <span>Tehlikeli</span>
         </div>
       </div>
-
-
 
       {loading && <div className="loading">Veriler yükleniyor...</div> }
       {error && <div className="error">{error}</div>}

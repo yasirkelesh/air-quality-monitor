@@ -8,6 +8,7 @@ from loguru import logger
 
 
 from config import API_HOST, API_PORT
+from data_access.anomaly_repository import AnomalyRepository
 
 class SSEController:
     """Server-Sent Events controller"""
@@ -15,6 +16,7 @@ class SSEController:
     def __init__(self):
         self.clients: Set[asyncio.Queue] = set()
         self.app = FastAPI(title="Anomali Bildirimleri SSE API")
+        self.anomaly_repository = AnomalyRepository()
         self.setup_routes()
     
     def setup_routes(self):
@@ -42,6 +44,21 @@ class SSEController:
                     self.clients.remove(queue)
             
             return StreamingResponse(event_generator(), media_type="text/event-stream")
+        
+        @self.app.get("/anomalies")
+        async def get_anomalies():
+            """Tüm aktif anomalileri getir"""
+            try:
+                # Tüm aktif anomalileri getir
+                anomalies = self.anomaly_repository.get_active_anomalies()
+                return {"anomalies": anomalies, "count": len(anomalies)}
+            
+            except Exception as e:
+                logger.error(f"Anomali sorgulama hatası: {str(e)}")
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": "Anomaliler sorgulanırken bir hata oluştu"}
+                )
         
         @self.app.get("/health")
         async def health_check():

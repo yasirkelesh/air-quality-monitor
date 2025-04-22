@@ -1,6 +1,5 @@
 // LocationAnalysisPanel.js
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import './LocationAnalysisPanel.css';
 
 // İkon bileşenleri
@@ -8,13 +7,6 @@ const CloseIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18"></line>
     <line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"></circle>
-    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
 
@@ -26,10 +18,93 @@ const LocationMarkerIcon = () => (
 );
 
 const LocationAnalysisPanel = ({ isOpen, onClose, selectedLocation, airQualityData, selectedMetric }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [locationDetails, setLocationDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [nearbyPoints, setNearbyPoints] = useState([]);
+
+  // İki nokta arasındaki mesafeyi hesaplama (Haversine formülü)
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Dünya yarıçapı km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    const distance = R * c; // Mesafe (km)
+    return distance;
+  }, []);
+
+  const deg2rad = (deg) => {
+    return deg * (Math.PI / 180);
+  };
+
+  // Geohash çözme (gerçek uygulamada daha doğru bir kütüphane kullanılmalı)
+  const decodeGeohash = useCallback((geohash) => {
+    // Basitleştirilmiş geohash decoder
+    if (geohash === 'sxjrb') {
+      return [29.91, 40.76]; // Kocaeli için yaklaşık konum
+    } else if (geohash === 'y5642') {
+      return [92.79, 56.01]; // Krasnoyarsk için yaklaşık konum
+    } else if (geohash === 'u4pruydqqvj8') {
+      return [13.41, 52.52]; // Berlin için yaklaşık konum
+    } else if (geohash === '9q5ctr') {
+      return [-118.24, 34.05]; // Los Angeles için yaklaşık konum
+    } else if (geohash === 'wtw3sm') {
+      return [151.21, -33.87]; // Sydney için yaklaşık konum
+    }
+    
+    // Diğer geohash'ler için basit yaklaşım
+    const hash = geohash.split('');
+    const lng = (hash.reduce((a, c) => a + c.charCodeAt(0), 0) % 360) - 180;
+    const lat = (hash.reduce((a, c) => a + c.charCodeAt(0) * 2, 0) % 180) - 90;
+    return [lng, lat];
+  }, []);
+
+  // Yakındaki hava kalitesi noktalarını bul
+  const findNearbyAirQualityPoints = useCallback((coordinates) => {
+    if (!airQualityData || airQualityData.length === 0) {
+      setNearbyPoints([]);
+      return;
+    }
+
+    // Kullanıcının tıkladığı konum
+    const [userLng, userLat] = coordinates;
+    
+    // Her veri noktası için mesafeyi hesapla
+    const pointsWithDistance = airQualityData.map(point => {
+      const [pointLng, pointLat] = decodeGeohash(point.geohash);
+      
+      // Haversine formülü ile iki nokta arasındaki mesafeyi hesapla (km cinsinden)
+      const distance = calculateDistance(userLat, userLng, pointLat, pointLng);
+      
+      return {
+        ...point,
+        distance,
+        coordinates: [pointLng, pointLat]
+      };
+    });
+    
+    // Mesafeye göre sırala ve en yakın 5 noktayı al
+    const closest = pointsWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 5);
+    
+    setNearbyPoints(closest);
+  }, [airQualityData, calculateDistance, decodeGeohash]);
+
+  // Ters geocoding (örnek fonksiyon - gerçek uygulamada API kullanılacak)
+  const fetchLocationAddress = async (coordinates) => {
+    // Bu örnek için geciktirme ekliyoruz, gerçek uygulamada bir API kullanılmalı
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Örnek adres yanıtı
+        const [lng, lat] = coordinates;
+        resolve(`${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E yakınlarında`);
+      }, 1000);
+    });
+  };
 
   // Seçilen lokasyon değiştiğinde veri yükleme
   useEffect(() => {
@@ -66,92 +141,7 @@ const LocationAnalysisPanel = ({ isOpen, onClose, selectedLocation, airQualityDa
           setLoading(false);
         });
     }
-  }, [selectedLocation, isOpen]);
-
-  // Ters geocoding (örnek fonksiyon - gerçek uygulamada API kullanılacak)
-  const fetchLocationAddress = async (coordinates) => {
-    // Bu örnek için geciktirme ekliyoruz, gerçek uygulamada bir API kullanılmalı
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Örnek adres yanıtı
-        const [lng, lat] = coordinates;
-        resolve(`${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E yakınlarında`);
-      }, 1000);
-    });
-  };
-
-  // Yakındaki hava kalitesi noktalarını bul
-  const findNearbyAirQualityPoints = (coordinates) => {
-    if (!airQualityData || airQualityData.length === 0) {
-      setNearbyPoints([]);
-      return;
-    }
-
-    // Kullanıcının tıkladığı konum
-    const [userLng, userLat] = coordinates;
-    
-    // Her veri noktası için mesafeyi hesapla
-    const pointsWithDistance = airQualityData.map(point => {
-      const [pointLng, pointLat] = decodeGeohash(point.geohash);
-      
-      // Haversine formülü ile iki nokta arasındaki mesafeyi hesapla (km cinsinden)
-      const distance = calculateDistance(userLat, userLng, pointLat, pointLng);
-      
-      return {
-        ...point,
-        distance,
-        coordinates: [pointLng, pointLat]
-      };
-    });
-    
-    // Mesafeye göre sırala ve en yakın 5 noktayı al
-    const closest = pointsWithDistance
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 5);
-    
-    setNearbyPoints(closest);
-  };
-
-  // İki nokta arasındaki mesafeyi hesaplama (Haversine formülü)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Dünya yarıçapı km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-    const distance = R * c; // Mesafe (km)
-    return distance;
-  };
-
-  const deg2rad = (deg) => {
-    return deg * (Math.PI / 180);
-  };
-
-  // Geohash çözme (gerçek uygulamada daha doğru bir kütüphane kullanılmalı)
-  const decodeGeohash = (geohash) => {
-    // Basitleştirilmiş geohash decoder
-    if (geohash === 'sxjrb') {
-      return [29.91, 40.76]; // Kocaeli için yaklaşık konum
-    } else if (geohash === 'y5642') {
-      return [92.79, 56.01]; // Krasnoyarsk için yaklaşık konum
-    } else if (geohash === 'u4pruydqqvj8') {
-      return [13.41, 52.52]; // Berlin için yaklaşık konum
-    } else if (geohash === '9q5ctr') {
-      return [-118.24, 34.05]; // Los Angeles için yaklaşık konum
-    } else if (geohash === 'wtw3sm') {
-      return [151.21, -33.87]; // Sydney için yaklaşık konum
-    }
-    
-    // Diğer geohash'ler için basit yaklaşım
-    const hash = geohash.split('');
-    const lng = (hash.reduce((a, c) => a + c.charCodeAt(0), 0) % 360) - 180;
-    const lat = (hash.reduce((a, c) => a + c.charCodeAt(0) * 2, 0) % 180) - 90;
-    return [lng, lat];
-  };
-
+  }, [selectedLocation, isOpen, findNearbyAirQualityPoints]);
 
   // AQI rengini hesapla
   const getAQIColor = (value, metric) => {

@@ -71,8 +71,15 @@ services:
     ports:
       - "80:80"
     restart: unless-stopped
+    depends_on:
+      - api-gateway
+      - anomaly-detection
     environment:
       - REACT_APP_API_URL=/api
+    networks:
+      - app-network
+
+
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
@@ -127,7 +134,7 @@ services:
       - PYTHONPATH=/app
     depends_on:
       - rabbitmq
-      - influxdb
+      - mongodb
     networks:
       - app-network
 
