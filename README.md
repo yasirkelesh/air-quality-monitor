@@ -1,6 +1,6 @@
 # Hava Kalitesi İzleme ve Analiz Sistemi
 
-![Sistem Logo](./assets/images/logo.png)
+![Sistem Logo](./assets/images/web-panel.png)
 
 ## Proje Hakkında
 
