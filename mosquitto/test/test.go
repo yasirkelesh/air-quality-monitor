@@ -80,8 +80,8 @@ func normalDataTest(client mqtt.Client) {
 }
 
 func anomalyTest(client mqtt.Client) {
-	lat := 40.714331
-	lon := 29.945292
+	lat := 39.714331
+	lon := 34.945292
 	counter := 0
 
 	for {

@@ -74,6 +74,8 @@ services:
     depends_on:
       - api-gateway
       - anomaly-detection
+      - data-collector
+      - data-processing
     environment:
       - REACT_APP_API_URL=/api
     networks:
