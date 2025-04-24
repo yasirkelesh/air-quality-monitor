@@ -12,7 +12,7 @@ import (
 	"github.com/yasirkelesh/data-collector/repository"
 )
 
-// PollutionService hava kirliliği verilerini işleyen servis
+
 type PollutionService struct {
 	repo             repository.PollutionRepository
 	mqttClient       *mqtt.Client
