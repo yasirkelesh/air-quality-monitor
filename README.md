@@ -31,7 +31,7 @@ Hava Kalitesi İzleme ve Analiz Sistemi, gerçek zamanlı hava kalitesi verileri
 1. **Veri Toplama Katmanı**
    - **MQTT Broker (Eclipse Mosquitto)**: Sensörlerden gelen verilerin toplanması için MQTT protokolünü destekler
    - **Data Collector Servisi**: Sensörlerden gelen verileri alır ve işlenmek üzere kuyruğa gönderir
-
+![Veri Toplama Katmani](./assets/images/data-collector.png)
 2. **Mesaj Kuyruk Sistemi**
    - **RabbitMQ**: Mikro servisler arasında asenkron iletişimi sağlar
 
