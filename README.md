@@ -1,4 +1,9 @@
+<div align="center">
+  
 ![Logo](./assets/images/logo1.png)
+  
+</div>
+
 
 ## Proje Hakkında
 
