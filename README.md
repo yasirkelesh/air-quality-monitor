@@ -1,4 +1,4 @@
-![Logo](./assets/images/logo1.png){width=300px height=auto}
+![Logo](./assets/images/logo1.png){width=100px height=auto}
 
 ## Proje Hakkında
 
