@@ -5,10 +5,11 @@
 </div>
 
 
-## Proje Hakkında
+
 
 ![web panel](./assets/images/web-panel.png)
 
+## Proje Hakkında
 Hava Kalitesi İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hava kirliliği verilerini toplayan, işleyen, analiz eden ve görselleştiren ve kullanıcılara bildirim gönderen web tabanlı bir platformdur. Sistem, sensörlerden veya scriptler aracılığıyla iletilen verileri toplayarak, belirlenen eşik değerlerini aşan kirlilik seviyelerini tespit eder ve kullanıcılara anlık uyarılar gönderir. Ayrıca, anomali tespiti yaparak olağandışı durumları saptar ve kullanıcıların verilere web arayüzü üzerinden kolayca erişmesini sağlar.
 
 ### Proje Amacı ve Kapsamı
@@ -33,8 +34,6 @@ Platform, mikroservis mimarisi kullanılarak tasarlanmıştır ve toplam dört b
 Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İletişim altyapısında RabbitMQ mesaj kuyruğu sistemi, sensör verilerinin alınmasında ise Mosquitto MQTT broker kullanılmıştır. Verilerin saklanması için ise zaman serisi verileri için InfluxDB, genel veri depolama ve kullanıcı yönetimi için MongoDB tercih edilmiştir.
 
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
-
-## Servisler
 
 ## Data Collector Servisi
 ![Veri Toplama Katmanı](./assets/images/data-collector.png)
@@ -90,36 +89,24 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 
 ![Anomali Tespit Katmanı](./assets/images/anomaly_detection.png)
 
-### 1. Sunum Katmanı (Presentation Layer)
+#### 1. Sunum Katmanı (Presentation Layer)
 Bu katman, dış dünya ile etkileşimi yönetir:
 * **RabbitMQ Consumer**: İşlenmiş veri kuyruğundan veri alır
 * **WebSocket Controller**: Gerçek zamanlı anomali bildirimlerini yönetir
 * **REST API Controller**: Anomali sorguları için HTTP endpoint'leri sağlar
 
-### 2. İş Katmanı (Business Layer)
+#### 2. İş Katmanı (Business Layer)
 Bu katman, ana iş mantığını ve algoritmalarını içerir:
 * **Anomali Tespiti Servisi**: Ana orkestratör, tüm tespit tiplerini koordine eder
 * **Zaman Serisi Anomali Dedektörü**: %50 artış kontrolünü yapar
 * **Eşik Anomali Dedektörü**: WHO standartlarına göre kontrol yapar
 * **Mekansal Anomali Dedektörü**: 25km yarıçap içindeki farklılıkları kontrol eder
 
-### 3. Domain Katmanı (Domain Layer)
-İş alanına özgü modeller ve kuralları içerir:
-* **Anomali Modeli**: Anomali verilerinin yapısını tanımlar
-* **İşlenmiş Veri Modeli**: RabbitMQ'dan alınan veri yapısını tanımlar
-* **Domain Servisleri**: Anomali değerlendirme kurallarını içerir
-
-### 4. Veri Erişim Katmanı (Data Access Layer)
+#### 4. Veri Erişim Katmanı (Data Access Layer)
 Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
 * **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
 * **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
 
-### 5. Altyapı Katmanı (Infrastructure Layer)
-Tüm katmanlar tarafından kullanılan çapraz kesen kaygıları içerir:
-* **Konfigürasyon**: Uygulama ayarlarını yönetir
-* **Loglama**: Log işlemlerini yönetir
-* **Hata Yönetimi**: Hata yakalama ve raporlama
-* **Metrik Toplama**: Performans ve iş metrikleri
 
 ## Teknoloji Seçimleri ve Gerekçeleri
 
