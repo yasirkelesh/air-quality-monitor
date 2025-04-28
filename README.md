@@ -20,46 +20,46 @@ Hava Kalitesi İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hav
 
 Platform, mikroservis mimarisi kullanılarak tasarlanmıştır ve toplam dört bağımsız servis içermektedir:
 
-- Data-Collector: MQTT broker üzerinden gelen sensör verilerini toplayarak veri tabanına kaydeder.
-- Data-Processing: Toplanan verileri işleyerek analiz edilmek üzere hazırlar.
-- Anomaly-Detection: Veriler üzerinde anomali tespiti yaparak olağandışı durumları belirler.
-- Notification (SMTP): Anomali veya eşik aşımı durumlarında kullanıcılara e-posta yoluyla bildirim gönderir.
+- **Data-Collector**: MQTT broker üzerinden gelen sensör verilerini toplayarak veri tabanına kaydeder.
+- **Data-Processing**: Toplanan verileri işleyerek analiz edilmek üzere hazırlar.
+- **Anomaly-Detection**: Veriler üzerinde anomali tespiti yaparak olağandışı durumları belirler.
+- **Notification (SMTP)**: Anomali veya eşik aşımı durumlarında kullanıcılara e-posta yoluyla bildirim gönderir.
 
 Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İletişim altyapısında RabbitMQ mesaj kuyruğu sistemi, sensör verilerinin alınmasında ise Mosquitto MQTT broker kullanılmıştır. Verilerin saklanması için ise zaman serisi verileri için InfluxDB, genel veri depolama ve kullanıcı yönetimi için MongoDB tercih edilmiştir.
 
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
-### Servisler
+## Servisler
 
-   ## Data Collector Servisi
-   ![Veri Toplama Katmani](./assets/images/data-collector.png)
-      Yukarıdaki diyagram, katmanlı veri toplama servisinin mimarisini göstermektedir. Her katmanda şu bileşenler yer alır:
+### Data Collector Servisi
+![Veri Toplama Katmanı](./assets/images/data-collector.png)
 
-   # 1. Veri Kaynakları
-   * **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
-   * **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
+Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmaktadır:
 
-   # 2. Sunum Katmanı
-   * **HTTP Handlers**: REST API isteklerini karşılar ve işler
-   * **MQTT Handler**: MQTT mesajlarını dinler ve işler
+#### 1. Veri Kaynakları
+* **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
+* **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
 
+#### 2. Sunum Katmanı
+* **HTTP Handlers**: REST API isteklerini karşılar ve işler
+* **MQTT Handler**: MQTT mesajlarını dinler ve işler
 
-   # 3. Servis Katmanı
-   * **Pollution Service**: Veri işleme, doğrulama ve zenginleştirme işlerini yürütür (yazma işlemleri için)
-   * **Query Service**: Veri sorgulama ve filtreleme işlemlerini yönetir (okuma işlemleri için)
+#### 3. Servis Katmanı
+* **Pollution Service**: Veri işleme, doğrulama ve zenginleştirme işlerini yürütür (yazma işlemleri için)
+* **Query Service**: Veri sorgulama ve filtreleme işlemlerini yönetir (okuma işlemleri için)
 
-   # 4. Altyapı Katmanı
-   * **MongoDB Repository**: MongoDB ile etkileşimi sağlar (hem yazma hem okuma)
-   * **RabbitMQ Publisher**: RabbitMQ kuyruklarına mesaj gönderimi yönetir
+#### 4. Altyapı Katmanı
+* **MongoDB Repository**: MongoDB ile etkileşimi sağlar (hem yazma hem okuma)
+* **RabbitMQ Publisher**: RabbitMQ kuyruklarına mesaj gönderimi yönetir
 
-   # 5. Veri Katmanı
-   * **MongoDB**: Ham verilerin saklandığı veritabanı
-   * **RabbitMQ Queue**: Servisler arası iletişim için kullanılan mesaj kuyruğu
+#### 5. Veri Katmanı
+* **MongoDB**: Ham verilerin saklandığı veritabanı
+* **RabbitMQ Queue**: Servisler arası iletişim için kullanılan mesaj kuyruğu
 
-   Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca,    gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir  şekilde erişebilirler.
+Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca, gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir şekilde erişebilirler.
    
-   ## Data Processing Servisi**   
-   ![Veri Toplama Katmani](./assets/images/data-processing.png)
+### Data Processing Servisi
+![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
 ## Teknoloji Seçimleri ve Gerekçeleri
 
