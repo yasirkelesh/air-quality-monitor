@@ -4,27 +4,30 @@
 
 ## Proje Hakkında
 
-*[Bu bölümde projenizin genel açıklamasını yazın - aşağıdaki taslağı kullanabilirsiniz]*
-
-Hava Kalitesi İzleme ve Analiz Sistemi, gerçek zamanlı hava kalitesi verilerini toplayan, işleyen, analiz eden ve görselleştiren kapsamlı bir platformdur. Bu sistem, sensörlerden gelen verileri merkezi bir veritabanında toplayarak, anomali tespiti yapar ve kullanıcılara web arayüzü üzerinden erişim sağlar.
+Hava Kalitesi İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hava kirliliği verilerini toplayan, işleyen, analiz eden ve görselleştiren ve kullanıcılara bildirim gönderen web tabanlı bir platformdur. Sistem, sensörlerden veya scriptler aracılığıyla iletilen verileri toplayarak, belirlenen eşik değerlerini aşan kirlilik seviyelerini tespit eder ve kullanıcılara anlık uyarılar gönderir. Ayrıca, anomali tespiti yaparak olağandışı durumları saptar ve kullanıcıların verilere web arayüzü üzerinden kolayca erişmesini sağlar.
 
 ### Proje Amacı ve Kapsamı
 
-*[Bu bölümde projenin amacını ve neleri kapsadığını açıklayın]*
-
 - Sensörlerden gelen verilerin MQTT protokolü üzerinden toplanması
-- Veri akışının RabbitMQ ile yönetilmesi
-- MongoDB'de ham verilerin saklanması
-- InfluxDB'de zaman serisi verilerinin depolanması
+- Veri akışının yönetilmesi
 - Anomali tespiti yapılması
 - RESTful API üzerinden veri erişimi
 - Web tabanlı dashboard ile verilerin görselleştirilmesi
 
 ## Sistem Mimarisi
 
-*[Bu bölümde sistemin genel mimarisini ve bileşenlerini açıklayın]*
-
 ![Sistem Mimarisi](./assets/images/architecture.png)
+
+Platform, mikroservis mimarisi kullanılarak tasarlanmıştır ve toplam dört bağımsız servis içermektedir:
+
+- Data-Collector: MQTT broker üzerinden gelen sensör verilerini toplayarak veri tabanına kaydeder.
+- Data-Processing: Toplanan verileri işleyerek analiz edilmek üzere hazırlar.
+- Anomaly-Detection: Veriler üzerinde anomali tespiti yaparak olağandışı durumları belirler.
+- Notification (SMTP): Anomali veya eşik aşımı durumlarında kullanıcılara e-posta yoluyla bildirim gönderir.
+
+Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İletişim altyapısında RabbitMQ mesaj kuyruğu sistemi, sensör verilerinin alınmasında ise Mosquitto MQTT broker kullanılmıştır. Verilerin saklanması için ise zaman serisi verileri için InfluxDB, genel veri depolama ve kullanıcı yönetimi için MongoDB tercih edilmiştir.
+
+Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
 ### Bileşenler
 
