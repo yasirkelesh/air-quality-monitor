@@ -61,25 +61,60 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 ### Data Processing Servisi
 ![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
-### Sunum Katmanı (Presentation Layer)
+#### 1. Sunum Katmanı (Presentation Layer)
 * **RabbitMQ Consumer**: raw-data kuyruğundan ham verileri alır
 * **RabbitMQ Publisher**: İşlenmiş verileri processed-data kuyruğuna gönderir
 * **FastAPI**: Bölgesel ortalama değerleri sorgulamak için API sunar
 
-### İş Katmanı (Business Layer)
+#### 2. İş Katmanı (Business Layer)
 * **Veri İşleme Servisi**: Ham verileri işler ve koordinatlardan geohash oluşturur
 * **Geocoding Servisi**: Koordinatları adres bilgilerine dönüştürür
 * **Bölgesel Ortalama Servisi**: Geohash bölgeleri için ortalama değerler hesaplar
 
-### Veri Erişim Katmanı (Data Access Layer)
+#### 3. Veri Erişim Katmanı (Data Access Layer)
 * **InfluxDB Repository**: Zaman serisi veritabanına erişim sağlar
 * **Cache Repository**: Sık kullanılan verileri önbellekler (opsiyonel)
 
-### Altyapı Katmanı (Infrastructure Layer)
+#### 4. Altyapı Katmanı (Infrastructure Layer)
 * **Konfigürasyon Yönetimi**: Çevresel değişkenler ve yapılandırma ayarları
 * **Loglama**: Uygulama durumlarını ve hatalarını kaydetme
 * **Hata Yönetimi**: Hataları ele alma ve raporlama
 
+
+## Anomali Tespit Servisi Mimarisi
+
+![Anomali Tespit Katmanı](./assets/images/anomaly_detection.png)
+
+### 1. Sunum Katmanı (Presentation Layer)
+Bu katman, dış dünya ile etkileşimi yönetir:
+* **RabbitMQ Consumer**: İşlenmiş veri kuyruğundan veri alır
+* **WebSocket Controller**: Gerçek zamanlı anomali bildirimlerini yönetir
+* **REST API Controller**: Anomali sorguları için HTTP endpoint'leri sağlar
+
+### 2. İş Katmanı (Business Layer)
+Bu katman, ana iş mantığını ve algoritmalarını içerir:
+* **Anomali Tespiti Servisi**: Ana orkestratör, tüm tespit tiplerini koordine eder
+* **Zaman Serisi Anomali Dedektörü**: %50 artış kontrolünü yapar
+* **Eşik Anomali Dedektörü**: WHO standartlarına göre kontrol yapar
+* **Mekansal Anomali Dedektörü**: 25km yarıçap içindeki farklılıkları kontrol eder
+
+### 3. Domain Katmanı (Domain Layer)
+İş alanına özgü modeller ve kuralları içerir:
+* **Anomali Modeli**: Anomali verilerinin yapısını tanımlar
+* **İşlenmiş Veri Modeli**: RabbitMQ'dan alınan veri yapısını tanımlar
+* **Domain Servisleri**: Anomali değerlendirme kurallarını içerir
+
+### 4. Veri Erişim Katmanı (Data Access Layer)
+Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
+* **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
+* **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
+
+### 5. Altyapı Katmanı (Infrastructure Layer)
+Tüm katmanlar tarafından kullanılan çapraz kesen kaygıları içerir:
+* **Konfigürasyon**: Uygulama ayarlarını yönetir
+* **Loglama**: Log işlemlerini yönetir
+* **Hata Yönetimi**: Hata yakalama ve raporlama
+* **Metrik Toplama**: Performans ve iş metrikleri
 
 ## Teknoloji Seçimleri ve Gerekçeleri
 
