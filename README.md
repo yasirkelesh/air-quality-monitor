@@ -36,7 +36,7 @@ Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım
 
 ## Servisler
 
-### Data Collector Servisi
+## Data Collector Servisi
 ![Veri Toplama Katmanı](./assets/images/data-collector.png)
 
 Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmaktadır:
@@ -63,7 +63,7 @@ Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmakt
 
 Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca, gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir şekilde erişebilirler.
    
-### Data Processing Servisi
+## Data Processing Servisi
 ![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
 #### 1. Sunum Katmanı (Presentation Layer)
@@ -86,7 +86,7 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 * **Hata Yönetimi**: Hataları ele alma ve raporlama
 
 
-## Anomali Tespit Servisi Mimarisi
+## Anomaly Detection Servisi
 
 ![Anomali Tespit Katmanı](./assets/images/anomaly_detection.png)
 
