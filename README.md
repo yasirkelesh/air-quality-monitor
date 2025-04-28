@@ -29,12 +29,16 @@ Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İleti�
 
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
+### Servisler
+   1. *Data Collector Servisi*
+   ![Veri Toplama Katmani](./assets/images/data-collector.png)
+   
 ### Bileşenler
 
 1. **Veri Toplama Katmanı**
    - **MQTT Broker (Eclipse Mosquitto)**: Sensörlerden gelen verilerin toplanması için MQTT protokolünü destekler
    - **Data Collector Servisi**: Sensörlerden gelen verileri alır ve işlenmek üzere kuyruğa gönderir
-![Veri Toplama Katmani](./assets/images/data-collector.png)
+
 2. **Mesaj Kuyruk Sistemi**
    - **RabbitMQ**: Mikro servisler arasında asenkron iletişimi sağlar
 
