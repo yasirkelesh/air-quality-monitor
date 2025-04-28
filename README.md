@@ -30,42 +30,35 @@ Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İleti�
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
 ### Servisler
-   1. *Data Collector Servisi*
+   1. **Data Collector Servisi**
    ![Veri Toplama Katmani](./assets/images/data-collector.png)
+      Yukarıdaki diyagram, katmanlı veri toplama servisinin mimarisini göstermektedir. Her katmanda şu bileşenler yer alır:
+
+      ## 1. Veri Kaynakları
+      * **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
+      * **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
+
+      ## 2. Sunum Katmanı
+      * **HTTP Handlers**: REST API isteklerini karşılar ve işler
+      * **MQTT Handler**: MQTT mesajlarını dinler ve işler
+
+
+      ## 3. Servis Katmanı
+      * **Pollution Service**: Veri işleme, doğrulama ve zenginleştirme işlerini yürütür (yazma işlemleri için)
+      * **Query Service**: Veri sorgulama ve filtreleme işlemlerini yönetir (okuma işlemleri için)
+
+      ## 4. Altyapı Katmanı
+      * **MongoDB Repository**: MongoDB ile etkileşimi sağlar (hem yazma hem okuma)
+      * **RabbitMQ Publisher**: RabbitMQ kuyruklarına mesaj gönderimi yönetir
+
+      ## 5. Veri Katmanı
+      * **MongoDB**: Ham verilerin saklandığı veritabanı
+      * **RabbitMQ Queue**: Servisler arası iletişim için kullanılan mesaj kuyruğu
+
+      Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca,      gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir    şekilde erişebilirler.
    
-### Bileşenler
-
-1. **Veri Toplama Katmanı**
-   - **MQTT Broker (Eclipse Mosquitto)**: Sensörlerden gelen verilerin toplanması için MQTT protokolünü destekler
-   - **Data Collector Servisi**: Sensörlerden gelen verileri alır ve işlenmek üzere kuyruğa gönderir
-
-2. **Mesaj Kuyruk Sistemi**
-   - **RabbitMQ**: Mikro servisler arasında asenkron iletişimi sağlar
-
-3. **Veri İşleme Katmanı**
-   - **Data Processing Servisi**: Ham verileri temizler, doğrular ve analiz için hazırlar
-
-4. **Veri Depolama Katmanı**
-   - **MongoDB**: Yapılandırılmış ve yarı yapılandırılmış verilerin saklanması
-   - **InfluxDB**: Zaman serisi verilerinin verimli depolanması ve sorgulanması
-
-5. **Anomali Tespiti Katmanı**
-   - **Anomaly Detection Servisi**: Makine öğrenimi algoritmaları kullanarak anormal hava kalitesi değerlerini tespit eder
-
-6. **API Katmanı**
-   - **API Gateway**: Tüm servislere tek bir noktadan erişim sağlar, kimlik doğrulama ve yetkilendirme yapar
-
-7. **Sunum Katmanı**
-   - **Web Panel**: React tabanlı kullanıcı arayüzü, gösterge panelleri ve raporlamayı sağlar
-
-### Veri Akışı
-
-1. Sensörler MQTT protokolü üzerinden verileri Mosquitto broker'a gönderir
-2. Data Collector verileri alır ve doğrular
-3. Veriler RabbitMQ kuyruğuna eklenir
-4. Data Processing servisi verileri işler ve MongoDB ile InfluxDB'ye kaydeder
-5. Anomaly Detection servisi düzenli olarak verileri analiz eder
-6. Web Panel ve API Gateway bu verilere erişim sağlar
+   2. **Data Processing Servisi**   
+   ![Veri Toplama Katmani](./assets/images/data-processing.png)
 
 ## Teknoloji Seçimleri ve Gerekçeleri
 
