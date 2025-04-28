@@ -61,6 +61,26 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 ### Data Processing Servisi
 ![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
+### Sunum Katmanı (Presentation Layer)
+* **RabbitMQ Consumer**: raw-data kuyruğundan ham verileri alır
+* **RabbitMQ Publisher**: İşlenmiş verileri processed-data kuyruğuna gönderir
+* **FastAPI**: Bölgesel ortalama değerleri sorgulamak için API sunar
+
+### İş Katmanı (Business Layer)
+* **Veri İşleme Servisi**: Ham verileri işler ve koordinatlardan geohash oluşturur
+* **Geocoding Servisi**: Koordinatları adres bilgilerine dönüştürür
+* **Bölgesel Ortalama Servisi**: Geohash bölgeleri için ortalama değerler hesaplar
+
+### Veri Erişim Katmanı (Data Access Layer)
+* **InfluxDB Repository**: Zaman serisi veritabanına erişim sağlar
+* **Cache Repository**: Sık kullanılan verileri önbellekler (opsiyonel)
+
+### Altyapı Katmanı (Infrastructure Layer)
+* **Konfigürasyon Yönetimi**: Çevresel değişkenler ve yapılandırma ayarları
+* **Loglama**: Uygulama durumlarını ve hatalarını kaydetme
+* **Hata Yönetimi**: Hataları ele alma ve raporlama
+
+
 ## Teknoloji Seçimleri ve Gerekçeleri
 
 *[Bu bölümde kullanılan teknolojileri ve neden seçildiklerini açıklayın]*
