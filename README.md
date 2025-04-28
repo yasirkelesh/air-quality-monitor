@@ -118,7 +118,7 @@ Tüm katmanlar tarafından kullanılan çapraz kesen kaygıları içerir:
 
 ## Teknoloji Seçimleri ve Gerekçeleri
 
-*[Bu bölümde kullanılan teknolojileri ve neden seçildiklerini açıklayın]*
+![Anomali Tespit Katmanı](./assets/images/tech_stack.png)
 
 ### Veri Toplama ve İletişim
 - **MQTT (Eclipse Mosquitto)**: Düşük bant genişliği gerektiren, hafif bir IoT protokolü olduğu için sensör verilerini toplamada ideal
