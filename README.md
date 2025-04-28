@@ -30,34 +30,35 @@ Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İleti�
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
 ### Servisler
-   1. **Data Collector Servisi**
+   ## 1. **Data Collector Servisi**
    ![Veri Toplama Katmani](./assets/images/data-collector.png)
+      
       Yukarıdaki diyagram, katmanlı veri toplama servisinin mimarisini göstermektedir. Her katmanda şu bileşenler yer alır:
 
-      ## 1. Veri Kaynakları
+      # 1. Veri Kaynakları
       * **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
       * **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
 
-      ## 2. Sunum Katmanı
+      # 2. Sunum Katmanı
       * **HTTP Handlers**: REST API isteklerini karşılar ve işler
       * **MQTT Handler**: MQTT mesajlarını dinler ve işler
 
 
-      ## 3. Servis Katmanı
+      # 3. Servis Katmanı
       * **Pollution Service**: Veri işleme, doğrulama ve zenginleştirme işlerini yürütür (yazma işlemleri için)
       * **Query Service**: Veri sorgulama ve filtreleme işlemlerini yönetir (okuma işlemleri için)
 
-      ## 4. Altyapı Katmanı
+      # 4. Altyapı Katmanı
       * **MongoDB Repository**: MongoDB ile etkileşimi sağlar (hem yazma hem okuma)
       * **RabbitMQ Publisher**: RabbitMQ kuyruklarına mesaj gönderimi yönetir
 
-      ## 5. Veri Katmanı
+      # 5. Veri Katmanı
       * **MongoDB**: Ham verilerin saklandığı veritabanı
       * **RabbitMQ Queue**: Servisler arası iletişim için kullanılan mesaj kuyruğu
 
       Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca,      gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir    şekilde erişebilirler.
    
-   2. **Data Processing Servisi**   
+   ## 2. **Data Processing Servisi**   
    ![Veri Toplama Katmani](./assets/images/data-processing.png)
 
 ## Teknoloji Seçimleri ve Gerekçeleri
