@@ -110,45 +110,45 @@ Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
 
 ## Frontend
 
-### React
+#### - React
 **Neden seçildi?**: React, component tabanlı yapısıyla büyük ve ölçeklenebilir arayüzler geliştirmeye çok uygundur. Ayrıca geniş bir ekosisteme (kütüphaneler, araçlar) sahiptir ve performansı yüksektir. Modern, interaktif UI'lar oluşturmak için ideal.
 
-### Mapbox
+#### - Mapbox
 **Neden seçildi?**: Harita tabanlı uygulamalarda esnek özelleştirme ve yüksek performans sunduğu için tercih edilir. Google Maps'e göre daha fazla özgürlük ve kendi sunucunda barındırma imkanı verir.
 
 ## Backend
 
-### Python (FastAPI)
+#### - Python (FastAPI)
 **Neden seçildi?**: Python, güçlü veri işleme, yapay zeka ve analitik kütüphanelerine (NumPy, Pandas, Scikit-learn) sahiptir. FastAPI ise modern, hızlı (high-performance) API'ler geliştirmek için idealdir. Asenkron programlama destekler ve otomatik OpenAPI/Swagger belgeleri sunar.
 
-### Golang (Gin)
+#### - Golang (Gin)
 **Neden seçildi?**: Go dili, yüksek performans, düşük bellek kullanımı ve eşzamanlılık (concurrency) desteği ile öne çıkar. Gin framework'ü ise Go ile hızlı, minimal ve verimli REST API'ler geliştirmek için kullanılır. Yüksek trafik altında bile düşük gecikme süresi sağlar.
 
 ## Database
 
-### MongoDB
+#### - MongoDB
 **Neden seçildi?**: NoSQL yapısıyla esnek ve hızlıdır. Yapılandırılmamış veya dinamik veriler için uygundur (örneğin: IoT verileri, kullanıcı aktiviteleri). JSON benzeri veri yapısıyla esnek veri modeli sunar.
 
-### InfluxDB
+#### - InfluxDB
 **Neden seçildi?**: Zaman serisi verileri (time-series data) için optimize edilmiştir. Sensör verileri, anlık ölçümler, izleme (monitoring) gibi sürekli zaman bazlı veri akışlarının saklanması ve sorgulanması için idealdir.
 
-## Messaging
+## - Messaging
 
-### RabbitMQ
+#### - RabbitMQ
 **Neden seçildi?**: Güvenilir mesaj kuyruğu (message queue) sistemi sağlar. Mikroservisler arası iletişimi güvenli ve asenkron hale getirir. Dağıtık sistemlerde veri kaybı olmadan iletişim kurmak için tercih edilir.
 
-### MQTT
+#### - MQTT
 **Neden seçildi?**: Çok hafif bir mesajlaşma protokolüdür. Özellikle düşük bant genişliğine ve sınırlı kaynaklara sahip IoT cihazları arasında veri iletimi için idealdir. Pub/Sub (yayınla/abone ol) modelini kullanır.
 
 ## DevOps
 
-### Docker
+#### - Docker
 **Neden seçildi?**: Uygulamaların bağımlılıklarıyla birlikte paketlenip her ortamda çalıştırılabilmesini sağlar. Geliştirme, test ve üretim ortamlarında tutarlılık sunar.
 
-### Docker Compose
+#### - Docker Compose
 **Neden seçildi?**: Birden fazla konteyneri (örneğin: backend, database, message broker) kolayca tanımlayıp birlikte çalıştırmak için kullanılır. Çok servislere sahip projelerde yönetimi kolaylaştırır.
 
-### Nginx
+#### - Nginx
 **Neden seçildi?**: Yüksek performanslı bir ters proxy (reverse proxy) ve yük dengeleyicidir (load balancer). Aynı zamanda statik dosya sunucusu olarak da mükemmeldir. API gateway veya frontend/backend servislerini dış dünyaya açarken güvenli ve verimli bir katman sunar.
 
 ## Kurulum
