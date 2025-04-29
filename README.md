@@ -102,7 +102,27 @@ Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
 * **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
 * **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
 
+## Notification Servisi
 
+![Notification Servisi](./assets/images/notification-service.png)
+
+#### 1. Sunum Katmanı (Presentation Layer)
+Bu katman, dış dünya ile etkileşimi yönetir:
+* **RabbitMQ Consumer**: İşlenmiş veri kuyruğundan veri alır
+* **WebSocket Controller**: Gerçek zamanlı anomali bildirimlerini yönetir
+* **REST API Controller**: Anomali sorguları için HTTP endpoint'leri sağlar
+
+#### 2. İş Katmanı (Business Layer)
+Bu katman, ana iş mantığını ve algoritmalarını içerir:
+* **Anomali Tespiti Servisi**: Ana orkestratör, tüm tespit tiplerini koordine eder
+* **Zaman Serisi Anomali Dedektörü**: %50 artış kontrolünü yapar
+* **Eşik Anomali Dedektörü**: WHO standartlarına göre kontrol yapar
+* **Mekansal Anomali Dedektörü**: 25km yarıçap içindeki farklılıkları kontrol eder
+
+#### 4. Veri Erişim Katmanı (Data Access Layer)
+Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
+* **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
+* **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
 
 ## API Gateway
 
