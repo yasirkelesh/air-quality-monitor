@@ -103,6 +103,14 @@ Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
 * **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
 
 
+
+## API Gateway
+
+![Api Gateway](./assets/images/api-gateway.png)
+
+Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı isteklerini Middleware (Auth & Logger) katmanında işler ve Proxy üzerinden ilgili mikroservislere yönlendirir. Yapı, güvenlik (kimlik doğrulama), loglama ve yönlendirme işlevlerini modüler olarak ayrıştırarak, servislerin yalıtılmış ve yönetilebilir olmasını sağlar.
+
+
 ## Teknoloji Seçimleri ve Gerekçeleri
 
 ![Anomali Tespit Katmanı](./assets/images/tech_stack.png)
@@ -132,7 +140,7 @@ Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
 #### - InfluxDB
 **Neden seçildi?**: Zaman serisi verileri (time-series data) için optimize edilmiştir. Sensör verileri, anlık ölçümler, izleme (monitoring) gibi sürekli zaman bazlı veri akışlarının saklanması ve sorgulanması için idealdir.
 
-## - Messaging
+## Messaging
 
 #### - RabbitMQ
 **Neden seçildi?**: Güvenilir mesaj kuyruğu (message queue) sistemi sağlar. Mikroservisler arası iletişimi güvenli ve asenkron hale getirir. Dağıtık sistemlerde veri kaybı olmadan iletişim kurmak için tercih edilir.
