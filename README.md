@@ -138,6 +138,8 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 ## Frontend
 
+![web-panel](./assets/images/web-panel.png)
+
 #### - React
 **Neden seçildi?**: React, component tabanlı yapısıyla büyük ve ölçeklenebilir arayüzler geliştirmeye çok uygundur. Ayrıca geniş bir ekosisteme (kütüphaneler, araçlar) sahiptir ve performansı yüksektir. Modern, interaktif UI'lar oluşturmak için ideal.
 
