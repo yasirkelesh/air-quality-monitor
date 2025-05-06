@@ -5,14 +5,14 @@
 </div>
 
 ## Proje Hakkında
-Hava Kalitesi İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hava kirliliği verilerini toplayan, işleyen, analiz eden ve görselleştiren ve kullanıcılara bildirim gönderen web tabanlı bir platformdur. Sistem, sensörlerden veya scriptler aracılığıyla iletilen verileri toplayarak, belirlenen eşik değerlerini aşan kirlilik seviyelerini tespit eder ve kullanıcılara anlık uyarılar gönderir. Ayrıca, anomali tespiti yaparak olağandışı durumları saptar ve kullanıcıların verilere web arayüzü üzerinden kolayca erişmesini sağlar.
+Hava Kirliliği İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hava kirliliği verilerini toplayan, işleyen, analiz eden, görselleştiren ve kullanıcılara bildirim gönderen web tabanlı bir platformdur. Sistem, sensörlerden veya kullanıcılar tarafından iletilen verileri toplayarak, belirlenen eşik değerlerini aşan kirlilik seviyelerini tespit eder ve kullanıcılara anlık uyarılar gönderir. Ayrıca, anomali tespiti yaparak olağandışı durumları saptar ve kullanıcıların verilere web arayüzü üzerinden kolayca erişmesini sağlar.
 
 ### Proje Amacı ve Kapsamı
 
-- Sensörlerden gelen verilerin MQTT protokolü üzerinden toplanması
+- Sensörlerden ve Kullanıcılardan gelen verilerin toplanması 
 - Veri akışının yönetilmesi
 - Anomali tespiti yapılması
-- RESTful API üzerinden veri erişimi
+- API üzerinden veri erişimi
 - Web tabanlı dashboard ile verilerin görselleştirilmesi
 
 ## Sistem Mimarisi
@@ -21,12 +21,12 @@ Hava Kalitesi İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı hav
 
 Platform, mikroservis mimarisi kullanılarak tasarlanmıştır ve toplam dört bağımsız servis içermektedir:
 
-- **Data-Collector**: MQTT broker üzerinden gelen sensör verilerini toplayarak veri tabanına kaydeder.
+- **Data-Collector**: Kullanıcı ve sensör verilerini toplayarak veri tabanına kaydeder.
 - **Data-Processing**: Toplanan verileri işleyerek analiz edilmek üzere hazırlar.
 - **Anomaly-Detection**: Veriler üzerinde anomali tespiti yaparak olağandışı durumları belirler.
 - **Notification (SMTP)**: Anomali veya eşik aşımı durumlarında kullanıcılara e-posta yoluyla bildirim gönderir.
 
-Tüm sistem, konteyner tabanlı bir mimari ile yapılandırılmıştır. İletişim altyapısında RabbitMQ mesaj kuyruğu sistemi, sensör verilerinin alınmasında ise Mosquitto MQTT broker kullanılmıştır. Verilerin saklanması için ise zaman serisi verileri için InfluxDB, genel veri depolama ve kullanıcı yönetimi için MongoDB tercih edilmiştir.
+Tüm sistem, Docker kullanarak konteyner tabanlı bir mimari ile yapılandırılmıştır. İletişim altyapısında RabbitMQ mesaj kuyruğu sistemi, sensör verilerinin alınmasında ise Mosquitto MQTT broker kullanılmıştır. Verilerin saklanması için ise zaman serisi verileri için InfluxDB, genel veri depolama ve kullanıcı yönetimi için MongoDB tercih edilmiştir.
 
 Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım senaryolarına kolayca adapte olabilecek bir yapıya sahiptir.
 
@@ -35,37 +35,32 @@ Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım
 
 Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmaktadır:
 
-#### 1. Veri Kaynakları
+#### 1. Veri Kaynakları 
 * **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
 * **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
 
-#### 2. Sunum Katmanı
+#### 2. Sunum Katmanı (Presentation Layer)
 * **HTTP Handlers**: REST API isteklerini karşılar ve işler
 * **MQTT Handler**: MQTT mesajlarını dinler ve işler
+* **RabbitMQ Publisher**: Kontrol edilen verinin broker'a akrarılması
 
-#### 3. Servis Katmanı
-* **Pollution Service**: Veri işleme, doğrulama ve zenginleştirme işlerini yürütür (yazma işlemleri için)
-* **Query Service**: Veri sorgulama ve filtreleme işlemlerini yönetir (okuma işlemleri için)
+#### 3. Servis Katmanı (Service Layer)
+* **Data Verification**: Toplanan verilerin doğrulama işlemi yapılır
 
-#### 4. Altyapı Katmanı
-* **MongoDB Repository**: MongoDB ile etkileşimi sağlar (hem yazma hem okuma)
-* **RabbitMQ Publisher**: RabbitMQ kuyruklarına mesaj gönderimi yönetir
+#### 4. Veri Erişim Katmanı (Data Access Layer)
+* **MongoDB Repostroy**: Ham verilerin veritabanına aktarılır
 
-#### 5. Veri Katmanı
-* **MongoDB**: Ham verilerin saklandığı veritabanı
-* **RabbitMQ Queue**: Servisler arası iletişim için kullanılan mesaj kuyruğu
-
-Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar. Ayrıca, gRPC entegrasyonu sayesinde diğer mikroservisler ve istemciler, veri toplama servisinin topladığı ham verilere verimli bir şekilde erişebilirler.
+Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar.
    
 ## Data Processing Servisi
 ![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
 #### 1. Sunum Katmanı (Presentation Layer)
+* **HTTP Handlers**: Bölgesel ortalama değerlerini sorgulamak için API sunar
 * **RabbitMQ Consumer**: raw-data kuyruğundan ham verileri alır
 * **RabbitMQ Publisher**: İşlenmiş verileri processed-data kuyruğuna gönderir
-* **FastAPI**: Bölgesel ortalama değerleri sorgulamak için API sunar
 
-#### 2. İş Katmanı (Business Layer)
+#### 2. Servis Katmanı (Service Layer)
 * **Veri İşleme Servisi**: Ham verileri işler ve koordinatlardan geohash oluşturur
 * **Geocoding Servisi**: Koordinatları adres bilgilerine dönüştürür
 * **Bölgesel Ortalama Servisi**: Geohash bölgeleri için ortalama değerler hesaplar
