@@ -69,55 +69,48 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 * **InfluxDB Repository**: Zaman serisi veritabanına erişim sağlar
 * **Cache Repository**: Sık kullanılan verileri önbellekler (opsiyonel)
 
-#### 4. Altyapı Katmanı (Infrastructure Layer)
-* **Konfigürasyon Yönetimi**: Çevresel değişkenler ve yapılandırma ayarları
-* **Loglama**: Uygulama durumlarını ve hatalarını kaydetme
-* **Hata Yönetimi**: Hataları ele alma ve raporlama
-
-
 ## Anomaly Detection Servisi
 
 ![Anomali Tespit Katmanı](./assets/images/anomaly_detection.png)
 
 #### 1. Sunum Katmanı (Presentation Layer)
-Bu katman, dış dünya ile etkileşimi yönetir:
-* **RabbitMQ Consumer**: İşlenmiş veri kuyruğundan veri alır
-* **WebSocket Controller**: Gerçek zamanlı anomali bildirimlerini yönetir
-* **REST API Controller**: Anomali sorguları için HTTP endpoint'leri sağlar
 
-#### 2. İş Katmanı (Business Layer)
-Bu katman, ana iş mantığını ve algoritmalarını içerir:
+* **HTTP Handlers**: Anomali sorguları için API sunar
+* **RabbitMQ Consumer**: processed-data kuyruğundan veri alır
+* **RabbitMQ Publisher**: İşlenmiş verileri anomaly-data kuyruğuna gönderir
+* **Server-Sent Events**: Gerçek zamanlı anomali bildirimlerini yönetir
+
+
+#### 2. Servis Katmanı (Service Layer)
+
 * **Anomali Tespiti Servisi**: Ana orkestratör, tüm tespit tiplerini koordine eder
 * **Zaman Serisi Anomali Dedektörü**: %50 artış kontrolünü yapar
 * **Eşik Anomali Dedektörü**: WHO standartlarına göre kontrol yapar
 * **Mekansal Anomali Dedektörü**: 25km yarıçap içindeki farklılıkları kontrol eder
 
 #### 4. Veri Erişim Katmanı (Data Access Layer)
-Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
-* **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
-* **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
+
+* **MongoDB Repository**: Mekansal Veriler ve anomali kayıtlarını yönetir
 
 ## Notification Servisi
 
 ![Notification Servisi](./assets/images/notification-service.png)
 
 #### 1. Sunum Katmanı (Presentation Layer)
-Bu katman, dış dünya ile etkileşimi yönetir:
-* **RabbitMQ Consumer**: İşlenmiş veri kuyruğundan veri alır
-* **WebSocket Controller**: Gerçek zamanlı anomali bildirimlerini yönetir
-* **REST API Controller**: Anomali sorguları için HTTP endpoint'leri sağlar
 
-#### 2. İş Katmanı (Business Layer)
-Bu katman, ana iş mantığını ve algoritmalarını içerir:
-* **Anomali Tespiti Servisi**: Ana orkestratör, tüm tespit tiplerini koordine eder
-* **Zaman Serisi Anomali Dedektörü**: %50 artış kontrolünü yapar
-* **Eşik Anomali Dedektörü**: WHO standartlarına göre kontrol yapar
-* **Mekansal Anomali Dedektörü**: 25km yarıçap içindeki farklılıkları kontrol eder
+* **RabbitMQ Consumer**: anomaly-data kuyruğundan veri alır
+* **HTTP Handlers**: Bildirim Kayıtları için API'ler sağlar
+
+#### 2. Servis Katmanı (Service Layer)
+
+* **Abonelik Yönetim Servisi**: Abonelik toplanması ve takibi servisi
+* **Bildirim Servisi**: Bildirim olşturma durumlarını kontrol eder
+* **Email Gönderme Servisi**: SMTP server kullanrak kullanıcıya Email bildirmleri gönderilir
+
 
 #### 4. Veri Erişim Katmanı (Data Access Layer)
-Veritabanı ve diğer veri kaynaklarıyla etkileşimi yönetir:
-* **Anomali Repository**: MongoDB'de anomali kayıtlarını yönetir
-* **Mekansal Veri Repository**: Yakın sensörleri sorgulamak için
+
+* **MongoDB Repository**: Kullanıcı Email adresieri ve gönderilen mailleri yönetir
 
 ## API Gateway
 
@@ -133,7 +126,6 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 ## Frontend
 
-![web-panel](./assets/images/web-panel.png)
 
 #### - React
 **Neden seçildi?**: React, component tabanlı yapısıyla büyük ve ölçeklenebilir arayüzler geliştirmeye çok uygundur. Ayrıca geniş bir ekosisteme (kütüphaneler, araçlar) sahiptir ve performansı yüksektir. Modern, interaktif UI'lar oluşturmak için ideal.
