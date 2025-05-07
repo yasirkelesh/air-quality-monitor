@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yasirkelesh/notification/api"
 	"github.com/yasirkelesh/notification/config"
+	"github.com/yasirkelesh/notification/messaging"
 	"github.com/yasirkelesh/notification/repository"
 )
 
@@ -31,6 +32,21 @@ func main() {
 	}
 	defer userRepo.Close()
 
+	rabbitConfig := messaging.RabbitMQConfig{
+		URI:        cfg.RabbitMQ.URI,
+		Exchange:   cfg.RabbitMQ.Exchange,
+		Queue:      cfg.RabbitMQ.Queue,
+		RoutingKey: cfg.RabbitMQ.RoutingKey,
+	}
+
+	publisher, err := messaging.NewRabbitMQPublisher(rabbitConfig)
+	if err != nil {
+		log.Printf("Warning: RabbitMQ connection failed: %v", err)
+		// RabbitMQ olmadan da devam et, verileri sadece MongoDB'ye kaydet
+		publisher = nil
+	} else {
+		defer publisher.Close()
+	}
 	/* userHandler := handlers.NewUserHandler(userRepo) */
 	//gin modunu ayarla
 	gin.SetMode(cfg.Server.Mode)

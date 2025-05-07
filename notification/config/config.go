@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	MongoDB  MongoDBConfig
-
+	RabbitMQ RabbitMQConfig
 }
 
 // ServerConfig HTTP sunucu ayarları
@@ -27,6 +27,12 @@ type MongoDBConfig struct {
 	Collection string `mapstructure:"collection"`
 }
 
+type RabbitMQConfig struct {
+	URI        string `mapstructure:"uri"`
+	Exchange   string `mapstructure:"exchange"`
+	Queue      string `mapstructure:"queue"`
+	RoutingKey string `mapstructure:"routingkey"`
+}
 
 // LoadConfig konfigürasyon yükler
 func LoadConfig() (*Config, error) {
@@ -44,6 +50,10 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("mongodb.database", "notification_db")
 	viper.SetDefault("mongodb.collection", "users")
 
+	viper.SetDefault("rabbitmq.uri", "amqp://guest:guest@rabbitmqt:5672/") //buna tekrar bak gust:guest@rabbitmq:5672
+	viper.SetDefault("rabbitmq.exchange", "pollution.data")
+	viper.SetDefault("rabbitmq.queue", "anomaly-data")
+	viper.SetDefault("rabbitmq.routingkey", "anomaly.data")
 
 	// Konfigürasyon dosyasını oku
 	if err := viper.ReadInConfig(); err != nil {
