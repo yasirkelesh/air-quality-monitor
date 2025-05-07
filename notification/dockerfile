@@ -1,0 +1,12 @@
+FROM golang:latest
+
+WORKDIR /app
+
+COPY . .
+
+RUN go mod download
+RUN go build -o notification
+
+EXPOSE 9090
+
+CMD ["./notification"] 

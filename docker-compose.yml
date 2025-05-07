@@ -111,7 +111,19 @@ services:
     networks:
       - app-network
 
-
+  # notification
+  notification:
+    build: ./notification
+    container_name: notification
+    ports:
+      - "9090:9090"
+    environment:
+      - .env
+    depends_on:
+      - rabbitmq
+      - mongodb
+    networks:
+      - app-network
   # data-Processing
   data-processing:
     build: ./data-processing

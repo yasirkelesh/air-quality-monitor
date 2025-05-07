@@ -1,0 +1,9 @@
+server:
+  port: "9090"
+  mode: "debug"
+
+mongodb:
+  uri: "mongodb://admin:password@mongodb:27017/"
+  database: "notification_db"
+  collection: "users"
+
