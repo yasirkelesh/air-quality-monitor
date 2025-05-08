@@ -5,6 +5,7 @@ import asyncio
 from loguru import logger
 from presentation.rabbit_consumer import RabbitMQConsumer
 from presentation.sse_controller import SSEController
+from presentation.rabbit_publisher import RabbitMQPublisher
 from business.anomaly_detector import AnomalyDetector
 from domain.models.processed_data import ProcessedData
 from data_access.anomaly_repository import AnomalyRepository
@@ -60,6 +61,11 @@ def process_message(message):
                         sse_controller.broadcast_anomaly(anomaly_dict),
                         sse_controller_loop
                     )
+                    # RabbitMQ'ya gönder
+                    publisher = RabbitMQPublisher()
+                    publisher.publish(anomaly_dict)
+                    publisher.close()
+                    logger.info(f"Anomali RabbitMQ'ya gönderildi: {anomaly_dict}")
         else:
             logger.info(f"Anomali bulunamadı - Kaynak: {data.source}")
     
