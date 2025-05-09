@@ -3,7 +3,6 @@ package messaging
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -11,8 +10,8 @@ import (
 )
 
 // MessagePublisher mesaj yayınlama arayüzü
-type MessagePublisher interface {
-	Publish(ctx context.Context, routingKey string, data interface{}) error
+type MessageConsumer interface {
+	Consume(ctx context.Context, handler func(d amqp.Delivery)) error
 	Close() error
 }
 
@@ -24,15 +23,14 @@ type RabbitMQConfig struct {
 	RoutingKey string
 }
 
-// RabbitMQPublisher RabbitMQ ile iletişim kuran yapı
-type RabbitMQPublisher struct {
+type RabbitMQConsumer struct {
 	config     RabbitMQConfig
 	connection *amqp.Connection
 	channel    *amqp.Channel
 }
 
 // NewRabbitMQPublisher yeni bir RabbitMQ publisher oluşturur
-func NewRabbitMQPublisher(config RabbitMQConfig) (*RabbitMQPublisher, error) {
+func NewRabbitMQConsumer(config RabbitMQConfig) (*RabbitMQConsumer, error) {
 	// RabbitMQ'ya bağlan
 	conn, err := amqp.Dial(config.URI)
 	if err != nil {
@@ -46,92 +44,85 @@ func NewRabbitMQPublisher(config RabbitMQConfig) (*RabbitMQPublisher, error) {
 		return nil, fmt.Errorf("RabbitMQ kanal hatası: %v", err)
 	}
 
-	// Exchange oluştur
-	err = ch.ExchangeDeclare(
-		config.Exchange, // exchange adı
-		"topic",         // exchange tipi
-		true,            // dayanıklı (durable)
-		false,           // otomatik silme (auto-delete)
-		false,           // dahili (internal)
-		false,           // bekletme yok (no-wait)
-		nil,             // argümanlar
-	)
-	if err != nil {
-		ch.Close()
-		conn.Close()
-		return nil, fmt.Errorf("RabbitMQ exchange oluşturma hatası: %v", err)
-	}
-
-	// Kuyruk oluştur
-	_, err = ch.QueueDeclare(
-		config.Queue, // kuyruk adı
-		true,         // dayanıklı (durable)
-		false,        // otomatik silme (auto-delete)
-		false,        // özel (exclusive)
-		false,        // bekletme yok (no-wait)
-		nil,          // argümanlar
-	)
-	if err != nil {
-		ch.Close()
-		conn.Close()
-		return nil, fmt.Errorf("RabbitMQ kuyruk oluşturma hatası: %v", err)
-	}
-
-	// Kuyruk ile exchange'i bağla
-	err = ch.QueueBind(
-		config.Queue,      // kuyruk adı
-		config.RoutingKey, // routing key
-		config.Exchange,   // exchange adı
-		false,             // bekletme yok (no-wait)
-		nil,               // argümanlar
-	)
-	if err != nil {
-		ch.Close()
-		conn.Close()
-		return nil, fmt.Errorf("RabbitMQ kuyruk bağlama hatası: %v", err)
-	}
-
 	log.Printf("RabbitMQ bağlantısı başarılı: %s\n", config.URI)
-	return &RabbitMQPublisher{
+
+	return &RabbitMQConsumer{
 		config:     config,
 		connection: conn,
 		channel:    ch,
 	}, nil
 }
 
-// Publish verilen veriyi RabbitMQ'ya gönderir
-func (p *RabbitMQPublisher) Publish(ctx context.Context, routingKey string, data interface{}) error {
-	// Routing key belirtilmemişse varsayılanı kullan
-	if routingKey == "" {
-		routingKey = p.config.RoutingKey
+// Consume mesajları tüketir ve her mesaj için handler fonksiyonunu çağırır
+func (c *RabbitMQConsumer) Consume(ctx context.Context, handler func(d amqp.Delivery)) error {
+	// Exchange ve queue'yu tanımla
+	err := c.channel.ExchangeDeclare(
+		c.config.Exchange, // name
+		"topic",           // type
+		true,              // durable
+		false,             // auto-deleted
+		false,             // internal
+		false,             // no-wait
+		nil,               // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("Exchange oluşturulamadı: %v", err)
 	}
 
-	// Veriyi JSON'a dönüştür
-	body, err := json.Marshal(data)
+	_, err = c.channel.QueueDeclare(
+		c.config.Queue, // name
+		true,           // durable
+		false,          // delete when unused
+		false,          // exclusive
+		false,          // no-wait
+		nil,            // arguments
+	)
 	if err != nil {
-		return fmt.Errorf("JSON dönüştürme hatası: %v", err)
+		return fmt.Errorf("Queue oluşturulamadı: %v", err)
 	}
 
-	// RabbitMQ'ya gönder
-	err = p.channel.Publish(
-		p.config.Exchange, // exchange
-		routingKey,        // routing key
-		false,             // zorunlu (mandatory)
-		false,             // acil (immediate)
-		amqp.Publishing{
-			ContentType:  "application/json",
-			Body:         body,
-			DeliveryMode: amqp.Persistent, // Mesajın kalıcı olmasını sağlar
-		})
+	err = c.channel.QueueBind(
+		c.config.Queue,      // queue name
+		c.config.RoutingKey, // routing key
+		c.config.Exchange,   // exchange
+		false,
+		nil,
+	)
 	if err != nil {
-		return fmt.Errorf("RabbitMQ mesaj gönderme hatası: %v", err)
+		return fmt.Errorf("Queue bind hatası: %v", err)
 	}
+
+	msgs, err := c.channel.Consume(
+		c.config.Queue, // queue
+		"",             // consumer
+		true,           // auto-ack
+		false,          // exclusive
+		false,          // no-local
+		false,          // no-wait
+		nil,            // args
+	)
+	if err != nil {
+		return fmt.Errorf("Mesajlar alınamadı: %v", err)
+	}
+
+	// Mesajları async olarak işle
+	go func() {
+		for {
+			select {
+			case msg := <-msgs:
+				handler(msg)
+			case <-ctx.Done():
+				log.Println("Consumer durduruldu.")
+				return
+			}
+		}
+	}()
 
 	return nil
 }
 
 // Close RabbitMQ bağlantısını kapatır
-func (p *RabbitMQPublisher) Close() error {
+func (p *RabbitMQConsumer) Close() error {
 	if p.channel != nil {
 		p.channel.Close()
 	}

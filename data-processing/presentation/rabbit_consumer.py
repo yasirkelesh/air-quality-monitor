@@ -5,7 +5,8 @@ from typing import Callable
 
 from config import (
     RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER,
-    RABBITMQ_PASS, RABBITMQ_RAW_QUEUE
+    RABBITMQ_PASS, RABBITMQ_RAW_QUEUE,
+    RABBITMQ_RAW_ROUTING_KEY,
 )
 
 class RabbitMQConsumer:

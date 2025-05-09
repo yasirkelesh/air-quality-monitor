@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/streadway/amqp"
 	"github.com/yasirkelesh/notification/api"
 	"github.com/yasirkelesh/notification/config"
 	"github.com/yasirkelesh/notification/messaging"
@@ -39,14 +41,30 @@ func main() {
 		RoutingKey: cfg.RabbitMQ.RoutingKey,
 	}
 
-	publisher, err := messaging.NewRabbitMQPublisher(rabbitConfig)
+	log.Printf("RabbitMQ config: %+v", rabbitConfig)
+	consumer, err := messaging.NewRabbitMQConsumer(rabbitConfig)
 	if err != nil {
-		log.Printf("Warning: RabbitMQ connection failed: %v", err)
-		// RabbitMQ olmadan da devam et, verileri sadece MongoDB'ye kaydet
-		publisher = nil
-	} else {
-		defer publisher.Close()
+		log.Fatalf("Consumer başlatılamadı: %v", err)
 	}
+	defer consumer.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		err := consumer.Consume(ctx, func(d amqp.Delivery) {
+			var payload map[string]interface{}
+			if err := json.Unmarshal(d.Body, &payload); err != nil {
+				log.Printf("JSON parse hatası: %v", err)
+				return
+			}
+			log.Printf("Yeni mesaj alındı: %v", payload)
+		})
+		if err != nil {
+			log.Fatalf("Consume başlatılamadı: %v", err)
+		}
+	}()
+
 	/* userHandler := handlers.NewUserHandler(userRepo) */
 	//gin modunu ayarla
 	gin.SetMode(cfg.Server.Mode)
@@ -87,7 +105,7 @@ func main() {
 
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

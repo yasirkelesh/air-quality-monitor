@@ -9,8 +9,13 @@ RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "admin")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "password123")
+RABBITMQ_EXCHANGE = os.getenv("RABBITMQ_EXCHANGE", "pollution.data")
 RABBITMQ_ANOMALY_QUEUE = os.getenv("RABBITMQ_ANOMALY_QUEUE", "anomaly-data")
+RABBITMQ_ANOMALY_ROUTING_KEY = os.getenv("RABBITMQ_ANOMALY_ROUTING_KEY", "anomaly.data")
 RABBITMQ_PROCESSED_QUEUE = os.getenv("RABBITMQ_PROCESSED_QUEUE", "processed-data")
+RABBITMQ_PROCESSED_ROUTING_KEY = os.getenv("RABBITMQ_PROCESSED_ROUTING_KEY", "processed.data")
+
+
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://admin:password@mongodb:27017/data-collector?authSource=admin")
 MONGODB_DB = os.getenv("MONGODB_DB", "anomaly_db")

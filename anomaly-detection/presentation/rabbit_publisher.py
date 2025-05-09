@@ -5,8 +5,9 @@ from datetime import datetime
 
 from config import (
     RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER,
-    RABBITMQ_PASS, RABBITMQ_PROCESSED_QUEUE,
-    RABBITMQ_ANOMALY_QUEUE,
+    RABBITMQ_PASS, RABBITMQ_ANOMALY_QUEUE,
+    RABBITMQ_ANOMALY_ROUTING_KEY,
+    RABBITMQ_EXCHANGE,
 )
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -37,11 +38,26 @@ class RabbitMQPublisher:
             # Bağlantı ve kanal aç
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
-            
+           
+            # Exchange'i tanımla
+            self.channel.exchange_declare(
+                exchange=RABBITMQ_EXCHANGE,
+                exchange_type='topic',
+                durable=True
+            )
+
             # Kuyruğu tanımla
             self.channel.queue_declare(queue=RABBITMQ_ANOMALY_QUEUE, durable=True)
             
+            # Queue'yu exchange'e bağla
+            self.channel.queue_bind(
+                queue=RABBITMQ_ANOMALY_QUEUE,
+                exchange=RABBITMQ_EXCHANGE,
+                routing_key=RABBITMQ_ANOMALY_ROUTING_KEY
+            )
+            
             logger.info(f"RabbitMQ Publisher bağlantı başarılı: {RABBITMQ_HOST}:{RABBITMQ_PORT}")
+            logger.info(f"RabbitMQ Publisher kuyruk başarılı: {RABBITMQ_ANOMALY_QUEUE}")
             return True
             
         except Exception as e:
@@ -56,8 +72,8 @@ class RabbitMQPublisher:
             
             # Kuyruğa gönder
             self.channel.basic_publish(
-                exchange='',
-                routing_key=RABBITMQ_PROCESSED_QUEUE,
+                exchange=RABBITMQ_EXCHANGE,
+                routing_key=RABBITMQ_ANOMALY_ROUTING_KEY,
                 body=message,
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # Kalıcı mesaj
