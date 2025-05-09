@@ -131,3 +131,4 @@ func (p *RabbitMQConsumer) Close() error {
 	}
 	return nil
 }
+

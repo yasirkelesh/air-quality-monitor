@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/yasirkelesh/notification/domain"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -13,6 +14,8 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) error
 	Close() error
+	FindUsersByRegion(regionGeohash string) ([]*domain.User, error)
+	SaveNotification(notification *domain.Notification) error
 }
 
 // userRepository, UserRepository interface'ini uygulayan yapı olarak tanımlanır.
@@ -60,5 +63,38 @@ func (r *userRepository) CreateUser(ctx context.Context, user *domain.User) erro
 	user.UpdatedAt = now
 
 	_, err := r.collection.InsertOne(ctx, user)
+	return err
+}
+
+func (r *userRepository) FindUsersByRegion(regionGeohash string) ([]*domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"geohash": bson.M{
+			"$regex":   "^" + regionGeohash,
+			"$options": "i",
+		},
+	}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var users []*domain.User
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *userRepository) SaveNotification(notification *domain.Notification) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := r.collection.InsertOne(ctx, notification)
 	return err
 }

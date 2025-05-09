@@ -12,3 +12,10 @@ rabbitmq:
   exchange: "pollution.data"
   queue: "anomaly-data"
   routingkey: "anomaly.data"
+
+email:
+  host: "smtp.gmail.com"
+  port: 587
+  username: "your-email@gmail.com"
+  password: "your-email-password"
+  from: "your-email@gmail.com"
