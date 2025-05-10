@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/yasirkelesh/notification/domain"
@@ -58,11 +59,22 @@ func NewUserRepository(uri, database, collectionName string) (UserRepository, er
 // CreateUser, domain.User tipindeki kullanıcıyı oluşturur.
 // Burada, CreatedAt ve UpdatedAt alanlarını mevcut zamana ayarlıyoruz.
 func (r *userRepository) CreateUser(ctx context.Context, user *domain.User) error {
+	// Önce kullanıcının var olup olmadığını kontrol et
+	filter := bson.M{"email": user.Email}
+	existingUser := &domain.User{}
+	err := r.collection.FindOne(ctx, filter).Decode(existingUser)
+	if err == nil {
+		return fmt.Errorf("bu email adresi ile kayıtlı kullanıcı zaten mevcut")
+	}
+	if err != mongo.ErrNoDocuments {
+		return fmt.Errorf("kullanıcı kontrolü sırasında hata: %v", err)
+	}
+
 	now := time.Now().UTC()
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
-	_, err := r.collection.InsertOne(ctx, user)
+	_, err = r.collection.InsertOne(ctx, user)
 	return err
 }
 

@@ -12,12 +12,21 @@ type Config struct {
 	Server   ServerConfig
 	MongoDB  MongoDBConfig
 	RabbitMQ RabbitMQConfig
+	Email    EmailConfig
 }
 
 // ServerConfig HTTP sunucu ayarları
 type ServerConfig struct {
 	Port string
 	Mode string // debug, release, test
+}
+
+type EmailConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
 }
 
 // MongoDBConfig MongoDB bağlantı ayarları
@@ -54,6 +63,12 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("rabbitmq.exchange", "pollution.data")
 	viper.SetDefault("rabbitmq.queue", "anomaly-data")
 	viper.SetDefault("rabbitmq.routingkey", "anomaly.data")
+
+	viper.SetDefault("email.host", "smtp.gmail.com")
+	viper.SetDefault("email.port", 587)
+	viper.SetDefault("email.username", "your-email@gmail.com")
+	viper.SetDefault("email.password", "your-email-password")
+	viper.SetDefault("email.from", "your-email@gmail.com")
 
 	// Konfigürasyon dosyasını oku
 	if err := viper.ReadInConfig(); err != nil {

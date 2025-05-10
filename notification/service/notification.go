@@ -29,13 +29,13 @@ func NewNotificationService(userRepo *repository.UserRepository, smtpHost string
 func (s *NotificationService) ProcessAnomaly(anomaly *domain.Anomaly) error {
 	// Geohash'in ilk 3 karakterini al (bölge için)
 	regionGeohash := anomaly.Geohash[:3]
-
+	log.Printf("Bölge: %s", regionGeohash)
 	// Bu bölgedeki kullanıcıları bul
 	users, err := s.userRepo.FindUsersByRegion(regionGeohash)
 	if err != nil {
 		return fmt.Errorf("bölge kullanıcıları bulunamadı: %v", err)
 	}
-
+	log.Printf("Kullanıcılar: %v", users)
 	// Her kullanıcıya bildirim gönder
 	for _, user := range users {
 		if err := s.sendAnomalyNotification(user, anomaly); err != nil {

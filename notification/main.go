@@ -14,8 +14,10 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/yasirkelesh/notification/api"
 	"github.com/yasirkelesh/notification/config"
+	"github.com/yasirkelesh/notification/domain"
 	"github.com/yasirkelesh/notification/messaging"
 	"github.com/yasirkelesh/notification/repository"
+	"github.com/yasirkelesh/notification/service"
 )
 
 func main() {
@@ -51,14 +53,31 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	notificationService := service.NewNotificationService(
+		&userRepo,
+		cfg.Email.Host,
+		cfg.Email.Port,
+		cfg.Email.Username,
+		cfg.Email.Password,
+		cfg.Email.From,
+	)
+
+	// Anomali işleme
+
 	go func() {
 		err := consumer.Consume(ctx, func(d amqp.Delivery) {
-			var payload map[string]interface{}
-			if err := json.Unmarshal(d.Body, &payload); err != nil {
+			var anomaly domain.Anomaly
+
+			if err := json.Unmarshal(d.Body, &anomaly); err != nil {
 				log.Printf("JSON parse hatası: %v", err)
 				return
 			}
-			log.Printf("Yeni mesaj alındı: %v", payload)
+
+			log.Printf("Yeni mesaj alındı: %v", anomaly)
+			err = notificationService.ProcessAnomaly(&anomaly)
+			if err != nil {
+				log.Printf("Anomali işlenemedi: %v", err)
+			}
 		})
 		if err != nil {
 			log.Fatalf("Consume başlatılamadı: %v", err)
@@ -113,6 +132,7 @@ func main() {
 	}
 
 	log.Println("Server exiting")
+
 	/* // Health check endpoint'i
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
