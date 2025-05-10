@@ -13,6 +13,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoibXVrZWxlcyIsImEiOiJjbTlpOGRiazcwMDF3MmtzZDUzc
 const SSE_URL = '/sse-events';
 const ANOMALIES_URL = '/anomalies'; // Anomali servisi URL'si
 const REGIONAL_AVERAGES_URL = '/regional-averages'; // Bölgesel ortalama servisi URL'si
+const NOTIFICATION_URL = '/notification'; // Bildirim servisi URL'si
 
 function App() {
   const mapContainer = useRef(null);
@@ -39,6 +40,17 @@ function App() {
    // Anomali servisi URL'si
   // SSE bağlantısı için useEffect
 
+  const [notificationForm, setNotificationForm] = useState({
+    email: '',
+    city: '',
+    geohash: ''
+  });
+  const [notificationStatus, setNotificationStatus] = useState(null);
+  const [isNotificationRegistered, setIsNotificationRegistered] = useState(() => {
+    // Sayfa yüklendiğinde localStorage'dan bildirim durumunu kontrol et
+    const savedStatus = localStorage.getItem('notificationRegistered');
+    return savedStatus === 'true';
+  });
 
   useEffect(() => {
     console.log('SSE bağlantısı başlatılıyor...');
@@ -705,6 +717,96 @@ function decodeGeohash(geohash) {
     }
   }
 
+  // Şehir bilgisinden geohash oluşturan fonksiyon
+  const getGeohashForCity = (city) => {
+    // Türkiye'deki bazı şehirlerin koordinatları
+    const cityCoordinates = {
+      'İstanbul': { lat: 41.0082, lon: 28.9784 },
+      'Ankara': { lat: 39.9334, lon: 32.8597 },
+      'İzmir': { lat: 38.4237, lon: 27.1428 },
+      'Bursa': { lat: 40.1885, lon: 29.0610 },
+      'Antalya': { lat: 36.8841, lon: 30.7056 },
+      'Adana': { lat: 37.0000, lon: 35.3213 },
+      'Konya': { lat: 37.8667, lon: 32.4833 },
+      'Gaziantep': { lat: 37.0662, lon: 37.3833 },
+      'Şanlıurfa': { lat: 37.1591, lon: 38.7969 },
+      'Kocaeli': { lat: 40.8533, lon: 29.8815 },
+      'Mersin': { lat: 36.8000, lon: 34.6333 },
+      'Diyarbakır': { lat: 37.9144, lon: 40.2306 },
+      'Kayseri': { lat: 38.7312, lon: 35.4787 },
+      'Eskişehir': { lat: 39.7767, lon: 30.5206 },
+      'Samsun': { lat: 41.2867, lon: 36.3300 },
+      'Denizli': { lat: 37.7765, lon: 29.0864 },
+      'Malatya': { lat: 38.3552, lon: 38.3095 },
+      'Sivas': { lat: 39.7477, lon: 37.0179 },
+      'Erzurum': { lat: 39.9000, lon: 41.2700 },
+      'Van': { lat: 38.4891, lon: 43.4089 }
+    };
+
+    // Şehir adını normalize et (Türkçe karakterleri düzelt)
+    const normalizedCity = city
+      .toLowerCase()
+      .replace(/ı/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c');
+
+    // Şehir koordinatlarını bul
+    const cityKey = Object.keys(cityCoordinates).find(key => 
+      key.toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c') === normalizedCity
+    );
+
+    if (cityKey) {
+      const coords = cityCoordinates[cityKey];
+      return Geohash.encode(coords.lat, coords.lon, 3); // 3 karakterlik geohash
+    }
+
+    // Eğer şehir bulunamazsa varsayılan olarak İstanbul'un geohash'ini döndür
+    return 'sz0';
+  };
+
+  // Bildirim kayıt fonksiyonu
+  const handleNotificationSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const geohash = getGeohashForCity(notificationForm.city);
+      const formData = {
+        email: notificationForm.email,
+        city: notificationForm.city,
+        geohash: geohash
+      };
+
+      console.log('Gönderilen veri:', formData);
+      const response = await axios.post(NOTIFICATION_URL, formData);
+      setNotificationStatus('success');
+      setNotificationForm({ email: '', city: '', geohash: '' });
+      setIsNotificationRegistered(true);
+      
+      // Başarılı kayıt durumunu localStorage'a kaydet
+      localStorage.setItem('notificationRegistered', 'true');
+      // E-posta adresini de saklayalım (opsiyonel)
+      localStorage.setItem('registeredEmail', formData.email);
+    } catch (error) {
+      console.error('Bildirim kayıt hatası:', error);
+      setNotificationStatus('error');
+    }
+  };
+
+  // Bildirim durumunu sıfırlama fonksiyonu (opsiyonel)
+  const resetNotificationStatus = () => {
+    setIsNotificationRegistered(false);
+    localStorage.removeItem('notificationRegistered');
+    localStorage.removeItem('registeredEmail');
+  };
+
   return (
     <div className="app">
       <div className="header">
@@ -911,6 +1013,59 @@ function decodeGeohash(geohash) {
               <span className="anomaly-icon">⚠️</span>
               <span>Aktif Anomaliler: {anomalies.length}</span>
             </div>
+          </div>
+        )}
+
+        {/* Bildirim kayıt formu */}
+        {!isNotificationRegistered ? (
+          <div className="notification-form">
+            <h3>Hava Kalitesi Bildirimleri</h3>
+            <form onSubmit={handleNotificationSubmit}>
+              <div className="form-group">
+                <input
+                  type="email"
+                  placeholder="E-posta adresiniz"
+                  value={notificationForm.email}
+                  onChange={(e) => setNotificationForm({...notificationForm, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  placeholder="Şehir"
+                  value={notificationForm.city}
+                  onChange={(e) => setNotificationForm({...notificationForm, city: e.target.value})}
+                  required
+                />
+              </div>
+              <button type="submit">Bildirimleri Aktifleştir</button>
+            </form>
+            {notificationStatus === 'success' && (
+              <div className="success-message">
+                Bildirimler başarıyla aktifleştirildi!
+              </div>
+            )}
+            {notificationStatus === 'error' && (
+              <div className="error-message">
+                Bir hata oluştu. Lütfen tekrar deneyin.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="notification-success">
+            <div className="success-icon">✓</div>
+            <p>Bildirimler aktif!</p>
+            <p className="notification-info">
+              {localStorage.getItem('registeredEmail')} adresine hava kalitesi anomali durumlarında bilgilendirme yapılacaktır.
+            </p>
+            {/* Opsiyonel: Bildirimleri iptal etme butonu */}
+            <button 
+              className="cancel-notification-btn"
+              onClick={resetNotificationStatus}
+            >
+              Bildirimleri İptal Et
+            </button>
           </div>
         )}
       </div>

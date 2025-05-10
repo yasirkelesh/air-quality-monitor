@@ -70,7 +70,6 @@ services:
     container_name: web-panel
     ports:
       - "80:80"
-    restart: unless-stopped
     depends_on:
       - api-gateway
       - anomaly-detection
@@ -80,7 +79,7 @@ services:
       - REACT_APP_API_URL=/api
     networks:
       - app-network
-
+    restart: always
 
   api-gateway:
     build: ./api-gateway
@@ -96,6 +95,7 @@ services:
       - data-processing
     networks:
       - app-network
+    restart: always
   # Veri toplama servisi
   data-collector:
     build: ./data-collector
@@ -110,6 +110,7 @@ services:
       - mongodb
     networks:
       - app-network
+    restart: always
 
   # notification
   notification:
@@ -124,6 +125,7 @@ services:
       - mongodb
     networks:
       - app-network
+    restart: always
   # data-Processing
   data-processing:
     build: ./data-processing
@@ -137,6 +139,7 @@ services:
       - influxdb
     networks:
       - app-network
+    restart: always
 
     # anomaly-detection
   anomaly-detection:
@@ -151,6 +154,7 @@ services:
       - mongodb
     networks:
       - app-network
+    restart: always
 
 
 
