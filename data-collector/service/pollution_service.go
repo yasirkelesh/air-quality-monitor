@@ -43,10 +43,7 @@ func (s *PollutionService) CloseMQTT() {
 // SetMessagePublisher RabbitMQ mesaj yayınlayıcısını ayarlar
 func (s *PollutionService) SavePollutionData(ctx context.Context, data *domain.PollutionData) (string, error) {
 	// Veri işleme/doğrulama işlemleri burada yapılabilir
-
-	// Loglama
-	log.Printf("Processing pollution data: lat=%f, lon=%f", data.Latitude, data.Longitude)
-
+	
 	// Zaman damgası yoksa ekle
 	if data.Timestamp.IsZero() {
 		data.Timestamp = time.Now().UTC()
