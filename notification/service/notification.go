@@ -62,7 +62,7 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
         body {
             font-family: Arial, sans-serif;
             line-height: 1.5;
-            color: #e0e0e0;
+            color: #ffffff;
             margin: 0;
             padding: 0;
             background-color: #121212;
@@ -96,6 +96,7 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
             padding: 15px;
             border-left: 4px solid #4caf50; /* Yeşil */
             margin: 15px 0;
+            color: #ffffff;
         }
         .details-title {
             font-weight: bold;
@@ -109,25 +110,26 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
         li {
             padding: 5px 0;
             border-bottom: 1px solid #333333;
+            color: #ffffff;
         }
         li:last-child {
             border-bottom: none;
         }
         .anomaly-value {
             font-weight: bold;
-            color: #4caf50; /* Yeşil */
+            color: #6bff6e; /* Daha parlak yeşil */
         }
         .footer {
             text-align: center;
             padding-top: 15px;
             border-top: 1px solid #333333;
             font-size: 12px;
-            color: #a0a0a0;
+            color: #ffffff;
         }
         .cta-button {
             display: inline-block;
             background-color: #4caf50; /* Yeşil */
-            color: black;
+            color: #ffffff;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 4px;
@@ -142,12 +144,11 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://havakalitesi.example.com/logo.png" alt="Hava Kalitesi İzleme Sistemi Logo" class="logo">
+            <img src="https://raw.githubusercontent.com/yasirkelesh/global-hava-kalitesi/main/assets/images/logo1.png?token=GHSAT0AAAAAACZTW5ANCWVBTRREJUKWY7QU2A72OSA" alt="Hava Kalitesi İzleme Sistemi Logo" class="logo">
         </div>
         <div class="content">
             <h2>Hava Kalitesi Anomali Bildirimi</h2>
-            
-            <p>bölgesinizde hava kalitesi anomali tespit edildi.</p>
+            <p> bölgesinizde hava kalitesi anomali tespit edildi.</p>
             
             <div class="details">
                 <div class="details-title">Anomali Detayları:</div>
@@ -163,7 +164,7 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
             
             <p>Detaylı bilgi için web sitemizi ziyaret edebilirsiniz.</p>
             <div style="text-align: center;">
-                <a href="http://localhost" class="cta-button">Web Sitesini Ziyaret Et</a>
+                <a href="https://localhost" class="cta-button">Web Sitesini Ziyaret Et</a>
             </div>
         </div>
         <div class="footer">
@@ -172,13 +173,13 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
         </div>
     </div>
 </body>
-</html>`,
-		anomaly.AnomalyType,
-		anomaly.Pollutant,
-		anomaly.CurrentValue,
-		anomaly.AverageValue,
-		anomaly.IncreaseRatio,
-		anomaly.Timestamp.Format("02.01.2006 15:04:05"))
+</html>`, 
+	anomaly.AnomalyType, 
+	anomaly.Pollutant,
+	anomaly.CurrentValue, 
+	anomaly.AverageValue, 
+	anomaly.IncreaseRatio,
+	anomaly.Timestamp.Format("02.01.2006 15:04:05"))
 
 	// Yedek olarak düz metin e-posta içeriği oluştur
 	plainBody := fmt.Sprintf(`
@@ -194,7 +195,7 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
 		- Artış Oranı: %.2f
 		- Tarih: %s
 		
-		Detaylı bilgi için web sitemizi ziyaret edebilirsiniz: https://havakalitesi.example.com
+		Detaylı bilgi için web sitemizi ziyaret edebilirsiniz: http://localhost
 		
 		Saygılarımızla,
 		Hava Kalitesi İzleme Sistemi
@@ -207,8 +208,8 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
 	m.SetHeader("From", s.mailFrom)
 	m.SetHeader("To", user.Email)
 	m.SetHeader("Subject", subject)
-	m.SetBody("text/plain", plainBody)      // Düz metin için
-	m.AddAlternative("text/html", htmlBody) // HTML versiyonu ekle
+	m.SetBody("text/plain", plainBody)  // Düz metin için
+	m.AddAlternative("text/html", htmlBody)  // HTML versiyonu ekle
 
 	// E-postayı gönder
 	if err := s.mailDialer.DialAndSend(m); err != nil {
@@ -222,7 +223,7 @@ func (s *NotificationService) sendAnomalyNotification(user *domain.User, anomaly
 		Type:      "EMAIL",
 		Status:    "SENT",
 		SentAt:    time.Now(),
-		Content:   htmlBody, // İçerik olarak HTML versiyonu kaydediyoruz
+		Content:   htmlBody,  // İçerik olarak HTML versiyonu kaydediyoruz
 	}
 
 	if err := s.userRepo.SaveNotification(notification); err != nil {
