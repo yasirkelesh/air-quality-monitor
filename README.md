@@ -212,14 +212,12 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 ## Kurulum
 
-*[Bu bölümde sistemin kurulum adımlarını detaylı olarak açıklayın]*
-
 ### Ön Koşullar
 
 - Docker ve Docker Compose
 - Git
-- Node.js (v14 veya üzeri) *[gerekiyorsa]*
-- Python 3.8+ *[gerekiyorsa]*
+- Node.js (v14 veya üzeri)
+- Python 3.8+
 
 ### Adım Adım Kurulum
 
@@ -227,35 +225,74 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 ```bash
 git clone git@github.com:yasirkelesh/global-hava-kalitesi.git
-cd hava-kalitesi-sistemi
+cd global-hava-kalitesi
 ```
 
 #### 2. Ortam Değişkenlerini Ayarlama
 
-`.env.example` dosyasını `.env` olarak kopyalayın ve gerekli değişkenleri düzenleyin:
+Her servis için gerekli `.env` dosyalarını oluşturun:
 
+**Data Collector için:**
 ```bash
-cp .env.example .env
-```
-
-Düzenlemeniz gereken temel değişkenler:
-
-```
 # MongoDB
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=password
-MONGO_INITDB_DATABASE=airquality
+MONGODB_URI=mongodb://admin:password@mongodb:27017/
+MONGODB_DATABASE=pollution_db
+MONGODB_COLLECTION=raw_data
+
+# MQTT
+MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+MQTT_CLIENT_ID=data-collector
+MQTT_TOPIC=pollution
 
 # RabbitMQ
-RABBITMQ_DEFAULT_USER=admin
-RABBITMQ_DEFAULT_PASS=password
+RABBITMQ_URI=amqp://admin:password123@rabbitmq:5672/
+RABBITMQ_EXCHANGE=pollution.data
+RABBITMQ_QUEUE=raw-data
+RABBITMQ_ROUTING_KEY=raw.data
+```
+
+**Data Processing için:**
+```bash
+# RabbitMQ
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USER=admin
+RABBITMQ_PASS=password123
+RABBITMQ_EXCHANGE=pollution.data
+RABBITMQ_RAW_QUEUE=raw-data
+RABBITMQ_PROCESSED_QUEUE=processed-data
 
 # InfluxDB
+INFLUXDB_HOST=influxdb
+INFLUXDB_PORT=8086
 INFLUXDB_USERNAME=admin
-INFLUXDB_PASSWORD=password
+INFLUXDB_PASSWORD=0YEQiQN6Y7UyU2N
+INFLUXDB_BUCKET=data_processing
 INFLUXDB_ORG=myorg
-INFLUXDB_BUCKET=airquality
-INFLUXDB_ADMIN_TOKEN=my-token
+INFLUXDB_TOKEN=mytoken
+
+# Geocoding
+GEOHASH_PRECISION=5
+```
+
+**Anomaly Detection için:**
+```bash
+# RabbitMQ
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USER=admin
+RABBITMQ_PASS=password123
+RABBITMQ_EXCHANGE=pollution.data
+RABBITMQ_ANOMALY_QUEUE=anomaly-data
+RABBITMQ_PROCESSED_QUEUE=processed-data
+
+# MongoDB
+MONGODB_URI=mongodb://admin:password@mongodb:27017/data-collector?authSource=admin
+MONGODB_DB=anomaly_db
+MONGODB_COLLECTION=anomalies
+
+# Anomali Ayarları
+ANOMALY_TTL_HOURS=1
 ```
 
 #### 3. MQTT Konfigürasyonu
@@ -268,7 +305,46 @@ echo "listener 1883
 allow_anonymous true" > mosquitto/config/mosquitto.conf
 ```
 
-#### 4. Sistemi Başlatma
+#### 4. Servis Konfigürasyonları
+
+**API Gateway (api-gateway/config.yaml):**
+```yaml
+server:
+  port: "8000"
+  mode: "debug"
+
+services:
+  datacollector: "http://data-collector:8080"
+
+auth:
+  jwtsecret: "your-secret-key"
+  enabled: false
+```
+
+**Data Collector (data-collector/config.yaml):**
+```yaml
+server:
+  port: "8080"
+  mode: "debug"
+
+mongodb:
+  uri: "mongodb://admin:password@mongodb:27017/"
+  database: "pollution_db"
+  collection: "raw_data"
+
+mqtt:
+  brokerurl: "mqtt://mqtt-broker:1883"
+  clientid: "data-collector"
+  topic: "pollution"
+
+rabbitmq:
+  uri: "amqp://admin:password123@rabbitmq:5672/"
+  exchange: "pollution.data"
+  queue: "raw-data"
+  routingkey: "raw.data"
+```
+
+#### 5. Sistemi Başlatma
 
 Docker Compose ile tüm servisleri başlatın:
 
@@ -282,42 +358,42 @@ Tüm container'ların çalıştığını kontrol edin:
 docker-compose ps
 ```
 
-#### 5. İlk Kurulum Sonrası İşlemler
+#### 6. Servis Sağlık Kontrolü
 
-*[Gerekli ise kurulum sonrası yapılması gereken işlemleri açıklayın]*
+Her servisin sağlık durumunu kontrol edin:
 
-- MongoDB için indekslerin oluşturulması
-- InfluxDB bucket yapılandırması
-- İlk kullanıcı hesabının oluşturulması
+```bash
+# API Gateway
+curl http://localhost:8000/health
 
-## Kullanım Rehberi
+# Data Collector
+curl http://localhost:8080/health
 
-*[Bu bölümde sistemin nasıl kullanılacağını açıklayın]*
+# Data Processing
+curl http://localhost:5000/health
 
-### Web Arayüzü Erişimi
-
-Web arayüzüne erişmek için tarayıcınızdan şu adrese gidin:
-
-```
-http://localhost:80
+# Anomaly Detection
+curl http://localhost:6000/health
 ```
 
-Varsayılan giriş bilgileri:
-- Kullanıcı adı: `admin`
-- Şifre: `password` *[üretim ortamında değiştirin!]*
+#### 7. İlk Kurulum Sonrası İşlemler
 
-### Dashboard Kullanımı
+1. MongoDB indekslerini oluşturun:
+```bash
+docker exec -it mongodb mongosh --eval 'db.raw_data.createIndex({ "timestamp": 1 })'
+docker exec -it mongodb mongosh --eval 'db.anomalies.createIndex({ "timestamp": 1 })'
+```
 
-*[Dashboard'un nasıl kullanılacağını açıklayın]*
+2. InfluxDB bucket'ını yapılandırın:
+```bash
+docker exec -it influxdb influx bucket create -n data_processing -o myorg
+```
 
-- Ana Gösterge Paneli
-- Harita Görünümü
-- Zaman Serisi Grafikleri
-- Raporlama Özellikleri
+3. RabbitMQ kuyruklarını kontrol edin:
+```bash
+docker exec -it rabbitmq rabbitmqctl list_queues
+```
 
-### Mobil Erişim
-
-*[Eğer varsa, mobil uygulama veya mobil web arayüzü hakkında bilgi verin]*
 
 ## API Dokümantasyonu
 
