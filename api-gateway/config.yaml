@@ -4,6 +4,10 @@ server:
 
 services:
   datacollector: "http://data-collector:8080"
+  dataprocessing: "http://data-processing:5000"
+  notification: "http://notification:9090"
+  anomalydetection: "http://anomaly-detection:6000"
+
 
 auth:
   jwtsecret: "your-secret-key"

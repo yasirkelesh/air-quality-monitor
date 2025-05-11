@@ -231,6 +231,7 @@ cd global-hava-kalitesi
 #### 2. Ortam Değişkenlerini Ayarlama
 
 Her servis için gerekli `.env` dosyalarını oluşturun:
+*Not: Şu anda tek bir `.env` dosyası bulunmaktadır. Servisler dağıtıldığında ayrı `.env` dosyaları oluşturulabilir.*
 
 **Data Collector için:**
 ```bash
@@ -349,7 +350,7 @@ rabbitmq:
 Docker Compose ile tüm servisleri başlatın:
 
 ```bash
-docker-compose up -d
+docker-compose up --build -d
 ```
 
 Tüm container'ların çalıştığını kontrol edin:
@@ -378,39 +379,56 @@ curl http://localhost:6000/health
 
 #### 7. İlk Kurulum Sonrası İşlemler
 
-1. MongoDB indekslerini oluşturun:
-```bash
-docker exec -it mongodb mongosh --eval 'db.raw_data.createIndex({ "timestamp": 1 })'
-docker exec -it mongodb mongosh --eval 'db.anomalies.createIndex({ "timestamp": 1 })'
-```
 
-2. InfluxDB bucket'ını yapılandırın:
-```bash
-docker exec -it influxdb influx bucket create -n data_processing -o myorg
-```
-
-3. RabbitMQ kuyruklarını kontrol edin:
-```bash
-docker exec -it rabbitmq rabbitmqctl list_queues
-```
 
 
 ## API Dokümantasyonu
 
-*[Bu bölümde API'nin nasıl kullanılacağını açıklayın]*
+### Data Collector Servisi
 
-API Gateway'e şu adresten erişebilirsiniz:
+| Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
+|----------|-------|----------|--------------|---------------|
+| /api/data-collector/api/v1/pollution | GET | Hava kirliliği verilerini listeler | - | Bearer Token(jwt) |
+| /api/data-collector/api/v1/pollution | POST | Yeni hava kirliliği verisi ekler | `{ "sensor_id": "string", "location": { "latitude": number, "longitude": number }, "parameters": { "pm25": number, "pm10": number, "o3": number } }` | Bearer Token(jwt) |
+| /api/data-collector/api/v1/health | GET | Servis sağlık kontrolü | - | - |
+| /api/data-collector/ping | GET | Basit ping kontrolü | - | - |
 
-```
-http://localhost:8000
-```
+### Data Processing Servisi
+
+| Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
+|----------|-------|----------|--------------|---------------|
+| /api/data-processing/regional-averages | GET | Tüm bölgeler için ortalama değerleri getirir | - | Bearer Token(jwt) |
+| /api/data-processing/regional-average/{geohash} | GET | Belirli bir bölge için ortalama değerleri getirir | - | Bearer Token(jwt) |
+
+### Anomaly Detection Servisi
+
+| Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
+|----------|-------|----------|--------------|---------------|
+| /api/anomaly-detection/anomalies | GET | Tespit edilen anomalileri listeler | - | Bearer Token(jwt) |
+| /api/anomaly-detection/anomalies/{id} | GET | Belirli bir anomali detayını getirir | - | Bearer Token(jwt) |
+| /api/anomaly-detection/anomalies/region/{geohash} | GET | Belirli bir bölgedeki anomalileri listeler | - | Bearer Token(jwt) |
+
+### Notification Servisi
+
+| Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
+|----------|-------|----------|--------------|---------------|
+| /api/notification/api/v1/users | POST | Yeni kullanıcı oluşturur | `{ "email": "string", "city": "string", "notification_types": ["string"] }` | Bearer Token(jwt) |
+| /api/notification/api/v1/health | GET | Servis sağlık kontrolü | - | - |
+| /api/notification/ping | GET | Basit ping kontrolü | - | - |
+
+### API Gateway
+
+| Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
+|----------|-------|----------|--------------|---------------|
+| /health | GET | Gateway sağlık kontrolü | - | - |
+| /auth/login | POST | Kimlik doğrulama | `{ "username": "string", "password": "string" }` | - |
 
 ### Kimlik Doğrulama
 
 API'ye erişim için JWT tabanlı kimlik doğrulama kullanılmaktadır. Token almak için:
 
 ```http
-POST /api/auth/login
+POST /auth/login
 Content-Type: application/json
 
 {
@@ -420,7 +438,6 @@ Content-Type: application/json
 ```
 
 Yanıt:
-
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -429,55 +446,11 @@ Yanıt:
 ```
 
 Sonraki tüm isteklerde bu token'ı Authorization header'ında kullanın:
-
 ```http
 GET /api/data
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
-
-### Temel Endpoint'ler
-
-#### Anlık Veri Alma
-
-```http
-GET /api/data/current
 ```
-
-Yanıt:
-
-```json
-{
-  "timestamp": "2023-05-15T14:30:00Z",
-  "readings": [
-    {
-      "sensor_id": "sensor-001",
-      "location": {
-        "latitude": 40.7128,
-        "longitude": -74.0060
-      },
-      "parameters": {
-        "pm25": 15.4,
-        "pm10": 25.6,
-        "o3": 0.034
-      }
-    }
-  ]
-}
-```
-
-#### Tarihsel Veri Sorgulama
-
-```http
-GET /api/data/history?sensor_id=sensor-001&start=2023-05-01T00:00:00Z&end=2023-05-15T23:59:59Z
-```
-
-#### Anomali Raporları
-
-```http
-GET /api/anomalies?severity=high
-```
-
-*[Diğer endpoint'leri ve örnekleri ekleyin]*
 
 ## Script'lerin Kullanımı
 

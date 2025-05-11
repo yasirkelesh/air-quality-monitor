@@ -72,6 +72,18 @@ func main() {
 	dataCollectorProxy := proxy.NewServiceProxy(cfg.Services.DataCollector, "data-collector")
 	router.Any("/api/data-collector/*proxyPath", dataCollectorProxy.ReverseProxy())
 
+	// Veri işleme servisi için proxy
+	dataProcessingProxy := proxy.NewServiceProxy(cfg.Services.DataProcessing, "data-processing")
+	router.Any("/api/data-processing/*proxyPath", dataProcessingProxy.ReverseProxy())
+
+	// Anomali tespit servisi için proxy
+	anomalyDetectionProxy := proxy.NewServiceProxy(cfg.Services.AnomalyDetection, "anomaly-detection")
+	router.Any("/api/anomaly-detection/*proxyPath", anomalyDetectionProxy.ReverseProxy())
+
+	// Bildirim servisi için proxy
+	notificationProxy := proxy.NewServiceProxy(cfg.Services.Notification, "notification")
+	router.Any("/api/notification/*proxyPath", notificationProxy.ReverseProxy())
+
 	// API gateway'i başlat
 	log.Printf("API Gateway starting on port %s in %s mode", cfg.Server.Port, cfg.Server.Mode)
 	if err := router.Run(":" + cfg.Server.Port); err != nil {

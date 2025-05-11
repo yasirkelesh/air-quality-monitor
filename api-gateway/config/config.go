@@ -22,7 +22,10 @@ type ServerConfig struct {
 
 // ServicesConfig mikroservis bağlantı adresleri
 type ServicesConfig struct {
-	DataCollector string
+	DataCollector    string
+	DataProcessing   string
+	Notification     string
+	AnomalyDetection string
 	// İleride eklenecek diğer servisler burada tanımlanabilir
 }
 
@@ -43,9 +46,12 @@ func LoadConfig() (*Config, error) {
 	// Varsayılan değerleri ayarla
 	viper.SetDefault("server.port", "8000")
 	viper.SetDefault("server.mode", "debug")
-	
+
 	viper.SetDefault("services.datacollector", "http://data-collector:8080")
-	
+	viper.SetDefault("services.dataprocessing", "http://data-processing:5000")
+	viper.SetDefault("services.notification", "http://notification:9090")
+	viper.SetDefault("services.anomalydetection", "http://anomaly-detection:6000")
+
 	viper.SetDefault("auth.jwtsecret", "your-secret-key")
 	viper.SetDefault("auth.enabled", false)
 
