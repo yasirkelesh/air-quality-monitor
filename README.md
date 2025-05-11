@@ -15,6 +15,33 @@ Hava Kirliliği İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı h
 - API üzerinden veri erişimi
 - Web tabanlı dashboard ile verilerin görselleştirilmesi
 
+## Web Panel
+
+![web-panel](./assets/images/web-panel.png)
+
+### Gösterge Paneli
+- **Gösterilen Metrik:** PM2.5 seçimi yapılabilir
+- **Isı Haritası:** Açma/kapama ve yoğunluk ayarı
+- **Otomatik Güncelleme:** Açma/kapama ve sıklık ayarı (10 saniye)
+
+### Anomali Takibi
+- **Aktif Anomaliler:** Mevcut anomali sayısı görüntüleme (4 adet)
+- **Anomali Servisi:** Etkinleştirme/devre dışı bırakma seçeneği
+- **Detaylar:** Kirletici türü, konsantrasyon ve eşik değerleri
+
+### Harita Özellikleri
+- **Konum İşaretleri:** İzleme istasyonları sarı noktalarla gösterilir
+- **Seçili Konum:** Detaylı ölçüm verileri (PM2.5, PM10, NO2, SO2, O3)
+- **Zaman Aralığı:** Ölçüm tarih aralığı gösterimi
+
+### Hava Kalitesi Göstergesi
+- İyi (Yeşil), Orta (Sarı), Hassas Gruplar İçin Sağlıksız (Turuncu)
+- Sağlıksız (Kırmızı), Çok Sağlıksız (Mor), Tehlikeli (Koyu Mor)
+
+### Bildirim Sistemi
+- E-posta ile bildirim alma formu
+- Özelleştirilebilir uyarı ayarları
+
 ## Sistem Mimarisi
 
 ![Sistem Mimarisi](./assets/images/architecture.png)
@@ -167,6 +194,9 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 #### - Nginx
 **Neden seçildi?**: Yüksek performanslı bir ters proxy (reverse proxy) ve yük dengeleyicidir (load balancer). Aynı zamanda statik dosya sunucusu olarak da mükemmeldir. API gateway veya frontend/backend servislerini dış dünyaya açarken güvenli ve verimli bir katman sunar.
+
+
+
 
 ## Kurulum
 
