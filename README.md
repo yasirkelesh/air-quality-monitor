@@ -20,12 +20,12 @@ Hava Kirliliği İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı h
 ![web-panel](./assets/images/web-panel.png)
 
 ### Gösterge Paneli
-- **Gösterilen Metrik:** PM2.5 seçimi yapılabilir
+- **Gösterilen Metrik:** metrik seçimi yapılabilir
 - **Isı Haritası:** Açma/kapama ve yoğunluk ayarı
-- **Otomatik Güncelleme:** Açma/kapama ve sıklık ayarı (10 saniye)
+- **Otomatik Güncelleme:** Açma/kapama ve sıklık ayarı 
 
 ### Anomali Takibi
-- **Aktif Anomaliler:** Mevcut anomali sayısı görüntüleme (4 adet)
+- **Aktif Anomaliler:** Mevcut anomali sayısı görüntüleme
 - **Anomali Servisi:** Etkinleştirme/devre dışı bırakma seçeneği
 - **Detaylar:** Kirletici türü, konsantrasyon ve eşik değerleri
 
@@ -38,9 +38,21 @@ Hava Kirliliği İzleme ve Analiz Sistemi, dünya genelindeki gerçek zamanlı h
 - İyi (Yeşil), Orta (Sarı), Hassas Gruplar İçin Sağlıksız (Turuncu)
 - Sağlıksız (Kırmızı), Çok Sağlıksız (Mor), Tehlikeli (Koyu Mor)
 
-### Bildirim Sistemi
-- E-posta ile bildirim alma formu
-- Özelleştirilebilir uyarı ayarları
+### E-posta Bildirim Sistemi
+
+Kullanıcılar web paneli üzerindeki formu doldurarak hava kalitesi bildirimlerine abone olabilirler. Sistem şu anda sadece Türkiye'deki şehirler için şehir ölçeğinde çalışmaktadır.
+
+**Form Özellikleri:**
+- Kullanıcı e-posta adresi girişi
+- Şehir seçimi yapabilme
+- Bildirim türü seçenekleri
+
+**Bildirim Mekanizması:**
+- Kullanıcının seçtiği şehirde bir anomali tespit edildiğinde otomatik e-posta gönderimi yapılır
+- E-posta içeriğinde anomali tipi, şiddeti, ölçüm değerleri ve zaman bilgisi yer alır
+- Kullanıcıya sağlık önerileri de e-posta içinde sunulur
+
+![Email Bildirim Örneği](./assets/images/mail.png)
 
 ## Sistem Mimarisi
 
