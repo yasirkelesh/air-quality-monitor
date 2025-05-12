@@ -74,12 +74,19 @@ class InfluxDBRepository:
                 .tag("city", data.get("city", "")) \
                 .tag("district", data.get("district", "")) \
                 .field("latitude", float(data.get("latitude", 0))) \
-                .field("longitude", float(data.get("longitude", 0))) \
-                .field("pm25", float(data.get("pm25", 0))) \
-                .field("pm10", float(data.get("pm10", 0))) \
-                .field("no2", float(data.get("no2", 0))) \
-                .field("so2", float(data.get("so2", 0))) \
-                .field("o3", float(data.get("o3", 0)))
+                .field("longitude", float(data.get("longitude", 0)))
+            
+            # Sadece None olmayan değerleri ekle
+            if data.get("pm25") is not None:
+                point.field("pm25", float(data.get("pm25")))
+            if data.get("pm10") is not None:
+                point.field("pm10", float(data.get("pm10")))
+            if data.get("no2") is not None:
+                point.field("no2", float(data.get("no2")))
+            if data.get("so2") is not None:
+                point.field("so2", float(data.get("so2")))
+            if data.get("o3") is not None:
+                point.field("o3", float(data.get("o3")))
             
             # Timestamp değerini ayarla
             timestamp = data.get("timestamp")
