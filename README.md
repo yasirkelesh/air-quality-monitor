@@ -222,6 +222,13 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 ## Kurulum
 
+### Önemli Not
+Bu projede `.env` dosyaları ve konfigürasyon dosyaları repository'de bulunmaktadır. Bu, geliştirme ortamında kolaylık sağlamak amacıyla yapılmıştır. Ancak, gerçek bir üretim ortamında bu yaklaşım güvenlik riskleri oluşturabilir. Üretim ortamında:
+
+* Hassas bilgileri (API anahtarları, veritabanı şifreleri vb.) `.env` dosyalarında saklamak yerine güvenli bir secrets management sistemi kullanılmalıdır
+* Konfigürasyon dosyaları environment-specific olmalı ve sadece gerekli ortamda bulunmalıdır
+* Tüm hassas bilgiler şifrelenmiş olarak saklanmalıdır
+
 ### Ön Koşullar
 
 - Docker ve Docker Compose
@@ -656,3 +663,80 @@ chmod +x auto-test.sh
 4. **Notification Servisi**
    - E-posta bildirimlerinin gönderildiğini kontrol edin
    - MongoDB'de kaydedilen bildirim kayıtlarını kontrol edin
+
+
+## Sorun Giderme Rehberi
+
+### Yaygın Sorunlar ve Çözümleri
+
+#### 1. Servisler Başlatılamıyor
+
+**Belirtiler:**
+- Docker container'ları başlatılamıyor
+- Servisler birbirine bağlanamıyor
+
+**Çözümler:**
+```bash
+# Tüm container'ları durdur ve sil
+docker-compose down
+
+# Docker volume'larını temizle
+docker-compose down -v
+
+# Yeniden başlat
+docker-compose up -d
+
+# Log'ları kontrol et
+docker-compose logs -f
+```
+
+#### 2. RabbitMQ Mesaj Kuyruğu Sorunları
+
+**Belirtiler:**
+- Mesajlar işlenmiyor
+- Kuyruk tıkanıklığı
+
+**Çözümler:**
+```bash
+# RabbitMQ yönetim panelini aç
+http://localhost:15672
+# Kullanıcı adı: admin
+# Şifre: password123
+
+# Kuyruk durumunu kontrol et
+docker exec -it rabbitmq rabbitmqctl list_queues
+
+# RabbitMQ servisini yeniden başlat
+docker-compose restart rabbitmq
+```
+
+### Performans İzleme
+
+Sistem performansını izlemek için:
+
+```bash
+# Container kaynak kullanımını izle
+docker stats
+
+# Servis log'larını gerçek zamanlı izle
+docker-compose logs -f [servis-adı]
+
+# MongoDB performans metriklerini kontrol et
+docker exec -it mongodb mongosh --eval "db.serverStatus()"
+```
+
+
+### Sistem Güncelleme
+
+Sistemi güncellemek için:
+
+```bash
+# En son değişiklikleri çek
+git pull
+
+# Servisleri yeniden oluştur ve başlat
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+```
