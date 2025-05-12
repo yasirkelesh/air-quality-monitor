@@ -107,6 +107,12 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 * **InfluxDB Repository**: Zaman serisi veritabanına erişim sağlar
 * **Cache Repository**: Sık kullanılan verileri önbellekler (opsiyonel)
 
+#### Geohash Hassasiyeti
+* **5 Karakterli Geohash**: Yaklaşık 4.9 km²'lik bir alanı temsil eder
+* **3 Karakterli Geohash**: Yaklaşık 156 km²'lik bir alanı temsil eder (25-30 km yarıçap)
+* **Anomali Tespiti**: 25 km yarıçap içindeki farklılıkları kontrol etmek için 3 karakterli geohash kullanılır
+
+
 ## Anomaly Detection Servisi
 
 ![Anomali Tespit Katmanı](./assets/images/anomaly_detection.png)
@@ -129,6 +135,15 @@ Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve ba�
 #### 4. Veri Erişim Katmanı (Data Access Layer)
 
 * **MongoDB Repository**: Mekansal Veriler ve anomali kayıtlarını yönetir
+
+#### Anomali Tespit Kriterleri
+* **Zaman Serisi Anomalisi**: Bölge ortalamasına göre %50 veya daha fazla artış
+* **Mekansal Anomali**: Bölge ortalamasına göre %100 veya daha fazla artış
+
+#### Veri Saklama ve İndeksleme
+* **MongoDB TTL İndeksi**: Anomaliler 1 saat sonra otomatik olarak silinir
+* **Geospatial İndeks**: Harita bazlı sorgular için konum indeksi
+* **Benzersiz İndeks**: Aynı anomali tekrar kaydedilmez
 
 ## Notification Servisi
 
