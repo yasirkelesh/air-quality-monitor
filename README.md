@@ -71,8 +71,6 @@ Bu yapı sayesinde sistem, ölçeklenebilir, yönetilebilir ve farklı kullanım
 ## Data Collector Servisi
 ![Veri Toplama Katmanı](./assets/images/data-collector.png)
 
-Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmaktadır:
-
 #### 1. Veri Kaynakları 
 * **REST API İstekleri**: Manuel veri girişi için HTTP endpointleri
 * **MQTT Mesajları**: Sensör verilerini almak için MQTT abonelikleri
@@ -88,8 +86,6 @@ Katmanlı veri toplama servisinin mimarisi aşağıdaki bileşenlerden oluşmakt
 #### 4. Veri Erişim Katmanı (Data Access Layer)
 * **MongoDB Repostroy**: Ham verilerin veritabanına aktarılır
 
-Bu katmanlı mimari, her bileşenin net bir sorumluluğa sahip olmasını ve bağımsız olarak test edilebilmesini sağlar.
-   
 ## Data Processing Servisi
 ![Veri İşleme Katmanı](./assets/images/data-processing.png)
 
@@ -230,8 +226,6 @@ Bu API Gateway mimarisi, Go diliyle geliştirilmiş olup, gelen kullanıcı iste
 
 - Docker ve Docker Compose
 - Git
-- Node.js (v14 veya üzeri)
-- Python 3.8+
 
 ### Adım Adım Kurulum
 
