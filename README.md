@@ -403,8 +403,8 @@ curl http://localhost:6000/health
 
 | Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
 |----------|-------|----------|--------------|---------------|
-| /api/data-collector/api/v1/pollution | GET | Hava kirliliği verilerini listeler | - | Bearer Token(jwt) |
-| /api/data-collector/api/v1/pollution | POST | Yeni hava kirliliği verisi ekler | `{ "sensor_id": "string", "location": { "latitude": number, "longitude": number }, "parameters": { "pm25": number, "pm10": number, "o3": number } }` | Bearer Token(jwt) |
+| /api/data-collector/api/v1/pollution | GET | Hava kirliliği verilerini listeler | - |  |
+| /api/data-collector/api/v1/pollution | POST | Yeni hava kirliliği verisi ekler | `{ "sensor_id": "string", "location": { "latitude": number, "longitude": number }, "parameters": { "pm25": number, "pm10": number, "o3": number } }` |  |
 | /api/data-collector/api/v1/health | GET | Servis sağlık kontrolü | - | - |
 | /api/data-collector/ping | GET | Basit ping kontrolü | - | - |
 
@@ -412,22 +412,22 @@ curl http://localhost:6000/health
 
 | Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
 |----------|-------|----------|--------------|---------------|
-| /api/data-processing/regional-averages | GET | Tüm bölgeler için ortalama değerleri getirir | - | Bearer Token(jwt) |
-| /api/data-processing/regional-average/{geohash} | GET | Belirli bir bölge için ortalama değerleri getirir | - | Bearer Token(jwt) |
+| /api/data-processing/regional-averages | GET | Tüm bölgeler için ortalama değerleri getirir | - |  |
+| /api/data-processing/regional-average/{geohash} | GET | Belirli bir bölge için ortalama değerleri getirir | - |  |
 
 ### Anomaly Detection Servisi
 
 | Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
 |----------|-------|----------|--------------|---------------|
-| /api/anomaly-detection/anomalies | GET | Tespit edilen anomalileri listeler | - | Bearer Token(jwt) |
-| /api/anomaly-detection/anomalies/{id} | GET | Belirli bir anomali detayını getirir | - | Bearer Token(jwt) |
-| /api/anomaly-detection/anomalies/region/{geohash} | GET | Belirli bir bölgedeki anomalileri listeler | - | Bearer Token(jwt) |
+| /api/anomaly-detection/anomalies | GET | Tespit edilen anomalileri listeler | - |  |
+| /api/anomaly-detection/anomalies/{id} | GET | Belirli bir anomali detayını getirir | - |  |
+| /api/anomaly-detection/anomalies/region/{geohash} | GET | Belirli bir bölgedeki anomalileri listeler | - |  |
 
 ### Notification Servisi
 
 | Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
 |----------|-------|----------|--------------|---------------|
-| /api/notification/api/v1/users | POST | Yeni kullanıcı oluşturur | `{ "email": "string", "city": "string", "notification_types": ["string"] }` | Bearer Token(jwt) |
+| /api/notification/api/v1/users | POST | Yeni kullanıcı oluşturur | `{ "email": "string", "city": "string", "geohash": "string"}` |  |
 | /api/notification/api/v1/health | GET | Servis sağlık kontrolü | - | - |
 | /api/notification/ping | GET | Basit ping kontrolü | - | - |
 
@@ -436,75 +436,10 @@ curl http://localhost:6000/health
 | Endpoint | Metod | Açıklama | İstek Gövdesi | Yetkilendirme |
 |----------|-------|----------|--------------|---------------|
 | /health | GET | Gateway sağlık kontrolü | - | - |
-| /auth/login | POST | Kimlik doğrulama | `{ "username": "string", "password": "string" }` | - |
 
-### Kimlik Doğrulama
 
-API'ye erişim için JWT tabanlı kimlik doğrulama kullanılmaktadır. Token almak için:
 
-```http
-POST /auth/login
-Content-Type: application/json
 
-{
-  "username": "your_username",
-  "password": "your_password"
-}
-```
-
-Yanıt:
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_at": "2023-12-31T23:59:59Z"
-}
-```
-
-Sonraki tüm isteklerde bu token'ı Authorization header'ında kullanın:
-```http
-GET /api/data
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-```
-
-## Script'lerin Kullanımı
-
-*[Bu bölümde sistemde bulunan script'lerin kullanımını açıklayın]*
-
-### Veri Simülasyonu
-
-Sensör verilerini simüle etmek için:
-
-```bash
-cd scripts
-python simulate_sensors.py --count 5 --interval 10
-```
-
-Parametreler:
-- `--count`: Simüle edilecek sensör sayısı
-- `--interval`: Veri gönderme aralığı (saniye)
-
-### Veritabanı Bakımı
-
-MongoDB indekslerini optimize etmek için:
-
-```bash
-python scripts/optimize_mongodb.py
-```
-
-InfluxDB retention policy'lerini yapılandırmak için:
-
-```bash
-python scripts/configure_influxdb_retention.py --days 90
-```
-
-### Sistem Sağlık Kontrolü
-
-Tüm servislerin durumunu kontrol etmek için:
-
-```bash
-bash scripts/health_check.sh
-```
 
 ## Test Senaryoları
 
