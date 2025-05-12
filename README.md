@@ -491,93 +491,84 @@ Tüm servislerin durumunu kontrol etmek için:
 bash scripts/health_check.sh
 ```
 
-## Sorun Giderme (Troubleshooting)
+## Test Senaryoları
 
-*[Bu bölümde yaygın sorunları ve çözümlerini açıklayın]*
+Sistemin farklı bileşenlerini test etmek için çeşitli test senaryoları bulunmaktadır.
 
-### Veri Akışı Sorunları
+### MQTT Test Aracı
 
-**Belirtiler:**
-- Web panelde veri görünmüyor
-- MQTT broker'a veri gelmiyor
+MQTT test aracı, sensör verilerini simüle etmek ve sistemin farklı senaryolardaki davranışını test etmek için kullanılır.
 
-**Çözümler:**
-1. MQTT broker'ın çalıştığını kontrol edin:
-   ```bash
-   docker logs mqtt-broker
-   ```
+#### Kurulum
 
-2. Data Collector servisinin loglarını kontrol edin:
-   ```bash
-   docker logs data-collector
-   ```
+```bash
+cd mosquitto/test
+go mod tidy
+```
 
-3. RabbitMQ yönetim panelini kontrol edin:
-   ```
-   http://localhost:15672
-   ```
+#### Çalıştırma
 
-### Veritabanı Bağlantı Sorunları
+```bash
+go run test.go
+```
 
-**Belirtiler:**
-- API Gateway 500 Internal Server Error dönüyor
-- Servislerin loglarında veritabanı bağlantı hataları görünüyor
+Program başlatıldığında 3 farklı test senaryosu sunulur:
 
-**Çözümler:**
-1. MongoDB'nin çalıştığını kontrol edin:
-   ```bash
-   docker logs mongodb
-   ```
+1. **Normal Veri Gönderimi**
+   - Tek bir sensörden normal değerlerle veri gönderir
+   - Her saniye bir veri gönderilir
+   - PM2.5, PM10, NO2, SO2 ve O3 değerleri normal aralıklarda
 
-2. InfluxDB'nin çalıştığını kontrol edin:
-   ```bash
-   docker logs influxdb
-   ```
+2. **Anomali Testi**
+   - Belirli bir sensörden anormal değerlerle veri gönderir
+   - Her 10 veride bir anomali oluşturur
+   - PM2.5 ve PM10 değerlerinde ani yükselişler gözlemlenir
 
-3. Ağ bağlantılarını kontrol edin:
-   ```bash
-   docker network inspect app-network
-   ```
+3. **Türkiye'deki 40 Farklı Lokasyondan Veri Gönderimi**
+   - Türkiye'nin 40 farklı şehrinden veri gönderir
+   - Her şehir için farklı bir sensör ID'si kullanılır
+   - Gerçekçi konum verileri ile test yapılır
 
-### Web Arayüzü Sorunları
+#### Test Verisi Formatı
 
-**Belirtiler:**
-- Sayfalar yüklenmiyor
-- Grafiklerde veri görünmüyor
+```json
+{
+    "latitude": 40.714331,
+    "longitude": 29.945292,
+    "timestamp": "2024-03-14T12:00:00Z",
+    "pm25": 25.0,
+    "pm10": 26.0,
+    "no2": 24.0,
+    "so2": 25.0,
+    "o3": 25.5,
+    "device_id": "sensor_normal"
+}
+```
 
-**Çözümler:**
-1. Web Panel container'ının çalıştığını kontrol edin:
-   ```bash
-   docker logs web-panel
-   ```
+#### Test Sonuçlarını İzleme
 
-2. API Gateway'in erişilebilir olduğunu kontrol edin:
-   ```bash
-   curl http://localhost:8000/health
-   ```
+1. **Data Collector Servisi**
+   - `http://localhost:8000/api/data-collector/api/v1/pollution` endpoint'inden gelen verileri kontrol edin
+   - MongoDB'de kaydedilen verileri kontrol edin
 
-3. Tarayıcı konsolunu kontrol edin (F12 tuşuna basın)
+2. **Data Processing Servisi**
+   - `http://localhost:8000/api/data-processing/regional-averages` endpoint'inden bölgesel ortalamaları kontrol edin
+   - InfluxDB'de işlenmiş verileri kontrol edin
 
-## Katkıda Bulunma
+3. **Anomaly Detection Servisi**
+   - `http://localhost:8000/api/anomaly-detection/anomalies` endpoint'inden tespit edilen anomalileri kontrol edin
+   - SSE bağlantısı üzerinden gerçek zamanlı anomali bildirimlerini izleyin
 
-*[Projeye katkıda bulunmak isteyenler için bilgiler]*
+4. **Notification Servisi**
+   - E-posta bildirimlerinin gönderildiğini kontrol edin
+   - MongoDB'de kaydedilen bildirim kayıtlarını kontrol edin
 
-1. Projeyi fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Değişikliklerinizi commit edin (`git commit -m 'Add some amazing feature'`)
-4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
-5. Pull Request oluşturun
+#### Önemli Notlar
 
-## Lisans
+- Test aracını çalıştırmadan önce tüm servislerin (Data Collector, Data Processing, Anomaly Detection, Notification) çalışır durumda olduğundan emin olun
+- MQTT broker'ın (Mosquitto) çalışır durumda olduğunu kontrol edin
+- Test senaryolarını uzun süre çalıştırmak için `Ctrl+C` ile programı durdurabilirsiniz
 
-*[Lisans bilgilerini ekleyin]*
 
-Bu proje [LİSANS ADI] altında lisanslanmıştır - detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
-## İletişim
 
-*[İletişim bilgilerinizi ekleyin]*
-
-Proje Sahibi - [E-posta adresiniz](mailto:email@example.com)
-
-Proje Linki: [https://github.com/kullaniciadi/hava-kalitesi-sistemi](https://github.com/kullaniciadi/hava-kalitesi-sistemi)
