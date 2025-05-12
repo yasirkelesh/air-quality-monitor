@@ -554,12 +554,26 @@ Belirli bir konum için kirlilik parametrelerini manuel olarak girmek için kull
 
 **Kullanım:**
 ```bash
+chmod +x manual-input.sh
 ./manual-input.sh <latitude> <longitude> <parameter> <value>
 ```
 
 **Örnek:**
 ```bash
-./manual-input.sh 41.0082 28.9784 pm25 35.5
+# PM2.5 değerini 35.7 olarak ayarla
+./manual-input.sh 41.0082 28.9784 pm25 35.7
+
+# PM10 değerini 75.2 olarak ayarla
+./manual-input.sh 41.0082 28.9784 pm10 75.2
+
+# NO2 değerini 60.5 olarak ayarla
+./manual-input.sh 41.0082 28.9784 no2 60.5
+
+# SO2 değerini 25.8 olarak ayarla
+./manual-input.sh 41.0082 28.9784 so2 25.8
+
+# O3 değerini 90.3 olarak ayarla
+./manual-input.sh 41.0082 28.9784 o3 90.3
 ```
 
 **Özellikler:**
@@ -581,6 +595,7 @@ Sistemi otomatik olarak test etmek için rastgele veriler üreten ve gönderen b
 
 **Kullanım:**
 ```bash
+chmod +x auto-test.sh
 ./auto-test.sh [options]
 ```
 
@@ -594,8 +609,11 @@ Sistemi otomatik olarak test etmek için rastgele veriler üreten ve gönderen b
 # Varsayılan ayarlarla çalıştırma
 ./auto-test.sh
 
-# Özel ayarlarla çalıştırma
-./auto-test.sh --duration=600 --rate=2 --anomaly-chance=20
+# Kısa ama yoğun test
+./auto-test.sh --duration=30 --rate=10 --anomaly-chance=5
+
+# Uzun süreli, yavaş ve sık anomalili test
+./auto-test.sh --duration=1800 --rate=1 --anomaly-chance=30
 ```
 
 **Özellikler:**
