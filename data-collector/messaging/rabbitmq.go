@@ -18,9 +18,9 @@ type MessagePublisher interface {
 
 // RabbitMQConfig RabbitMQ yapılandırması
 type RabbitMQConfig struct {
-	URI      string
-	Exchange string
-	Queue    string
+	URI        string
+	Exchange   string
+	Queue      string
 	RoutingKey string
 }
 
@@ -101,6 +101,11 @@ func NewRabbitMQPublisher(config RabbitMQConfig) (*RabbitMQPublisher, error) {
 
 // Publish verilen veriyi RabbitMQ'ya gönderir
 func (p *RabbitMQPublisher) Publish(ctx context.Context, routingKey string, data interface{}) error {
+	// Bağlantı kontrolü
+	if p.channel == nil || p.connection == nil {
+		return fmt.Errorf("RabbitMQ bağlantısı mevcut değil")
+	}
+
 	// Routing key belirtilmemişse varsayılanı kullan
 	if routingKey == "" {
 		routingKey = p.config.RoutingKey

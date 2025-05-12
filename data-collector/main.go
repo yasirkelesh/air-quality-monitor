@@ -49,14 +49,32 @@ func main() {
 		RoutingKey: cfg.RabbitMQ.RoutingKey,
 	}
 
-	publisher, err := messaging.NewRabbitMQPublisher(rabbitConfig)
-	if err != nil {
-		log.Printf("Warning: RabbitMQ connection failed: %v", err)
-		// RabbitMQ olmadan da devam et, verileri sadece MongoDB'ye kaydet
-		publisher = nil
-	} else {
-		defer publisher.Close()
+	var publisher messaging.MessagePublisher
+	var rabbitErr error
+	maxRetries := 10
+	retryCount := 0
+
+	for retryCount < maxRetries {
+		publisher, rabbitErr = messaging.NewRabbitMQPublisher(rabbitConfig)
+		if rabbitErr == nil {
+			log.Printf("RabbitMQ bağlantısı başarılı: %s", cfg.RabbitMQ.URI)
+			break
+		}
+
+		retryCount++
+		log.Printf("RabbitMQ bağlantı denemesi %d/%d başarısız: %v", retryCount, maxRetries, rabbitErr)
+
+		if retryCount < maxRetries {
+			log.Printf("5 saniye sonra tekrar denenecek...")
+			time.Sleep(5 * time.Second)
+		}
 	}
+
+	if rabbitErr != nil {
+		log.Fatalf("RabbitMQ bağlantısı %d deneme sonrasında başarısız oldu. Uygulama sonlandırılıyor.", maxRetries)
+	}
+
+	defer publisher.Close()
 
 	// Servis katmanını oluştur
 	pollutionService := service.NewPollutionService(repo, publisher)

@@ -12,7 +12,6 @@ import (
 	"github.com/yasirkelesh/data-collector/repository"
 )
 
-
 type PollutionService struct {
 	repo             repository.PollutionRepository
 	mqttClient       *mqtt.Client
@@ -43,7 +42,7 @@ func (s *PollutionService) CloseMQTT() {
 // SetMessagePublisher RabbitMQ mesaj yayınlayıcısını ayarlar
 func (s *PollutionService) SavePollutionData(ctx context.Context, data *domain.PollutionData) (string, error) {
 	// Veri işleme/doğrulama işlemleri burada yapılabilir
-	
+
 	// Zaman damgası yoksa ekle
 	if data.Timestamp.IsZero() {
 		data.Timestamp = time.Now().UTC()
@@ -60,10 +59,11 @@ func (s *PollutionService) SavePollutionData(ctx context.Context, data *domain.P
 
 	// RabbitMQ'ya mesaj gönder
 	if s.messagePublisher != nil { // Nil kontrolü eklendi
-		routingKey := ""
+		routingKey := "raw.data"
 
 		if err := s.messagePublisher.Publish(ctx, routingKey, data); err != nil {
 			log.Printf("RabbitMQ'ya mesaj gönderme hatası: %v", err)
+			// Hata durumunda sadece log kaydı tut, uygulamanın çalışmaya devam etmesini sağla
 		} else {
 			log.Printf("Pollution data published to RabbitMQ, ID: %s", id)
 		}
