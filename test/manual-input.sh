@@ -1,78 +1,108 @@
+
 #!/bin/bash
 
-# Manuel veri girişi script'i
+# manual-input.sh - Kirlilik parametrelerini manuel olarak girmek için betik
 # Kullanım: ./manual-input.sh <latitude> <longitude> <parameter> <value>
+# Örnek: ./manual-input.sh 41.0082 28.9784 pm25 35.7
 
-# Renk tanımlamaları
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+API_URL="http://localhost:8000/api/data-collector/api/v1/pollution"
 
-# Parametre kontrolü
-if [ "$#" -ne 4 ]; then
-    echo -e "${RED}Hata: Yanlış parametre sayısı${NC}"
+# Parametreleri kontrol et
+if [ $# -ne 4 ]; then
+    echo "Hata: Eksik parametre!"
     echo "Kullanım: ./manual-input.sh <latitude> <longitude> <parameter> <value>"
-    echo "Örnek: ./manual-input.sh 41.0082 28.9784 pm25 35.5"
+    echo "Örnek: ./manual-input.sh 41.0082 28.9784 pm25 35.7"
+    echo ""
+    echo "Geçerli kirlilik parametreleri: pm25, pm10, no2, so2, o3"
     exit 1
 fi
 
-# Parametreleri al
 LATITUDE=$1
 LONGITUDE=$2
-PARAMETER=$3
+PARAMETER=$(echo "$3" | tr '[:upper:]' '[:lower:]')  # Parametreyi küçük harfe çevir
 VALUE=$4
 
-# Parametre doğrulama
-if ! [[ "$LATITUDE" =~ ^-?[0-9]+\.?[0-9]*$ ]] || ! [[ "$LONGITUDE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
-    echo -e "${RED}Hata: Geçersiz koordinat değerleri${NC}"
+# Latitude ve longitude değerlerinin sayı olup olmadığını kontrol et
+if ! [[ $LATITUDE =~ ^[+-]?[0-9]*\.?[0-9]+$ ]]; then
+    echo "Hata: Latitude bir sayı olmalıdır."
     exit 1
 fi
 
-if ! [[ "$VALUE" =~ ^[0-9]+\.?[0-9]*$ ]]; then
-    echo -e "${RED}Hata: Geçersiz değer${NC}"
+if ! [[ $LONGITUDE =~ ^[+-]?[0-9]*\.?[0-9]+$ ]]; then
+    echo "Hata: Longitude bir sayı olmalıdır."
     exit 1
 fi
 
-# Parametre adını kontrol et
+# Value değerinin sayı olup olmadığını kontrol et
+if ! [[ $VALUE =~ ^[+-]?[0-9]*\.?[0-9]+$ ]]; then
+    echo "Hata: Değer bir sayı olmalıdır."
+    exit 1
+fi
+
+# Geçerli bir kirlilik parametresi olup olmadığını kontrol et
 case $PARAMETER in
-    "pm25"|"pm10"|"no2"|"so2"|"o3")
+    pm25|pm10|no2|so2|o3)
+        # Geçerli parametre
         ;;
     *)
-        echo -e "${RED}Hata: Geçersiz parametre adı${NC}"
-        echo "Geçerli parametreler: pm25, pm10, no2, so2, o3"
+        echo "Hata: Geçersiz kirlilik parametresi: $PARAMETER"
+        echo "Geçerli kirlilik parametreleri: pm25, pm10, no2, so2, o3"
         exit 1
         ;;
 esac
 
-# JSON verisi oluştur
-JSON_DATA=$(cat <<EOF
-{
-    "sensor_id": "manual_input_$(date +%s)",
-    "location": {
-        "latitude": $LATITUDE,
-        "longitude": $LONGITUDE
-    },
-    "parameters": {
-        "$PARAMETER": $VALUE
-    }
-}
-EOF
-)
+# Geçerli varsayılan değerler
+DEFAULT_PM25=15.0
+DEFAULT_PM10=30.0
+DEFAULT_NO2=25.0
+DEFAULT_SO2=10.0
+DEFAULT_O3=40.0
 
-# API'ye veri gönder
-echo -e "${GREEN}Veri gönderiliyor...${NC}"
+# Mevcut değerleri varsayılanlarla ayarla
+PM25=$DEFAULT_PM25
+PM10=$DEFAULT_PM10
+NO2=$DEFAULT_NO2
+SO2=$DEFAULT_SO2
+O3=$DEFAULT_O3
+
+# Kullanıcı tarafından belirtilen parametreyi güncelle
+case $PARAMETER in
+    pm25)
+        PM25=$VALUE
+        ;;
+    pm10)
+        PM10=$VALUE
+        ;;
+    no2)
+        NO2=$VALUE
+        ;;
+    so2)
+        SO2=$VALUE
+        ;;
+    o3)
+        O3=$VALUE
+        ;;
+esac
+
+# JSON verisini oluştur
+JSON_DATA="{\"latitude\": $LATITUDE, \"longitude\": $LONGITUDE, \"pm25\": $PM25, \"pm10\": $PM10, \"no2\": $NO2, \"so2\": $SO2, \"o3\": $O3}"
+
+# API isteği gönder
+echo "Gönderilen veri:"
 echo "$JSON_DATA"
+echo ""
 
-RESPONSE=$(curl -s -X POST \
-    -H "Content-Type: application/json" \
-    -d "$JSON_DATA" \
-    http://localhost:8000/api/data-collector/api/v1/pollution)
+RESPONSE=$(curl -s -X POST $API_URL \
+           -H "Content-Type: application/json" \
+           -d "$JSON_DATA")
 
-# Yanıtı kontrol et
+# Cevabı kontrol et
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Veri başarıyla gönderildi${NC}"
-    echo "Yanıt: $RESPONSE"
+    echo "Veri başarıyla gönderildi!"
+    echo "API yanıtı:"
+    echo "$RESPONSE"
 else
-    echo -e "${RED}Veri gönderilirken hata oluştu${NC}"
-    exit 1
+    echo "Hata: Veri gönderilemedi!"
+    echo "API yanıtı:"
+    echo "$RESPONSE"
 fi
