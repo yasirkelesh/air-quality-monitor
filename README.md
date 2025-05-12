@@ -45,7 +45,6 @@ Kullanıcılar web paneli üzerindeki formu doldurarak hava kalitesi bildirimler
 **Form Özellikleri:**
 - Kullanıcı e-posta adresi girişi
 - Şehir seçimi yapabilme
-- Bildirim türü seçenekleri
 
 **Bildirim Mekanizması:**
 - Kullanıcının seçtiği şehirde bir anomali tespit edildiğinde otomatik e-posta gönderimi yapılır
@@ -502,7 +501,7 @@ MQTT test aracı, sensör verilerini simüle etmek ve sistemin farklı senaryola
 #### Kurulum
 
 ```bash
-cd mosquitto/test
+cd test
 go mod tidy
 ```
 
@@ -545,6 +544,74 @@ Program başlatıldığında 3 farklı test senaryosu sunulur:
 }
 ```
 
+### Manuel ve Otomatik Test Scriptleri
+
+Sistemin farklı senaryolarda test edilmesi için iki farklı test scripti bulunmaktadır:
+
+#### 1. Manuel Veri Girişi Script'i (`manual-input.sh`)
+
+Belirli bir konum için kirlilik parametrelerini manuel olarak girmek için kullanılır.
+
+**Kullanım:**
+```bash
+./manual-input.sh <latitude> <longitude> <parameter> <value>
+```
+
+**Örnek:**
+```bash
+./manual-input.sh 41.0082 28.9784 pm25 35.5
+```
+
+**Özellikler:**
+- Koordinat ve parametre doğrulaması
+- JSON formatında veri oluşturma
+- API'ye veri gönderme
+- Hata kontrolü ve renkli çıktılar
+
+**Desteklenen Parametreler:**
+- pm25
+- pm10
+- no2
+- so2
+- o3
+
+#### 2. Otomatik Test Script'i (`auto-test.sh`)
+
+Sistemi otomatik olarak test etmek için rastgele veriler üreten ve gönderen bir script.
+
+**Kullanım:**
+```bash
+./auto-test.sh [options]
+```
+
+**Opsiyonlar:**
+- `--duration=<seconds>`: Script'in çalışma süresi (varsayılan: 300 saniye)
+- `--rate=<requests_per_second>`: Saniyede kaç istek atılacağı (varsayılan: 1)
+- `--anomaly-chance=<percentage>`: Anomali oluşturma olasılığı (varsayılan: %10)
+
+**Örnekler:**
+```bash
+# Varsayılan ayarlarla çalıştırma
+./auto-test.sh
+
+# Özel ayarlarla çalıştırma
+./auto-test.sh --duration=600 --rate=2 --anomaly-chance=20
+```
+
+**Özellikler:**
+- Türkiye'deki gerçek şehir koordinatları kullanır
+- Rastgele ve anomali değerleri üretir
+- Özelleştirilebilir test süresi, hızı ve anomali olasılığı
+- Renkli çıktılar ve ilerleme gösterimi
+- Hata kontrolü ve loglama
+
+**Test Edilen Senaryolar:**
+1. Normal veri akışı
+2. Anomali durumları
+3. Yüksek yük testi
+4. Farklı lokasyonlardan eşzamanlı veri gönderimi
+
+
 #### Test Sonuçlarını İzleme
 
 1. **Data Collector Servisi**
@@ -562,13 +629,3 @@ Program başlatıldığında 3 farklı test senaryosu sunulur:
 4. **Notification Servisi**
    - E-posta bildirimlerinin gönderildiğini kontrol edin
    - MongoDB'de kaydedilen bildirim kayıtlarını kontrol edin
-
-#### Önemli Notlar
-
-- Test aracını çalıştırmadan önce tüm servislerin (Data Collector, Data Processing, Anomaly Detection, Notification) çalışır durumda olduğundan emin olun
-- MQTT broker'ın (Mosquitto) çalışır durumda olduğunu kontrol edin
-- Test senaryolarını uzun süre çalıştırmak için `Ctrl+C` ile programı durdurabilirsiniz
-
-
-
-
